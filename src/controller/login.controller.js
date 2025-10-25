@@ -1,7 +1,16 @@
-import {loginService} from '../service/login.service.js'
+import { loginService } from '../service/login.service.js'
 
 export async function loginController(req, res) {
-  return res.status(200).json({ "Ok":"Ok" });
+  try {
+    let username = req.body.username;
+    let passwordHash = req.body.passwordHash;
+    let jwt = await loginService(username, passwordHash);
 
+    return res.status(200).json({ "token": jwt });
+  }
+  catch (error) {
+    console.error(error)
+    return res.status(error.code).json({ "msg": error.message })
+  }
 };
 

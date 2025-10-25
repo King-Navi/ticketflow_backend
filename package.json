@@ -17,12 +17,20 @@
   "scripts": {
     "start": "nodemon src/index.js",
     "test": "jest",
-    "prepare": "husky"
+    "prepare": "husky",
+    "postgre:build": "node src/config/generate.models.js",
+    "swagger:docs": "",
+    "docker": ""
   },
   "dependencies": {
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
-    "nodemon": "^3.1.10"
+    "joi": "^18.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "nodemon": "^3.1.10",
+    "pg": "^8.16.3",
+    "pg-hstore": "^2.3.4",
+    "sequelize-auto": "^0.8.8"
   },
   "devDependencies": {
     "husky": "^9.1.7",

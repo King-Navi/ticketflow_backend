@@ -7,6 +7,14 @@ class BadRequest extends Error {
   }
 }
 
+class NotFound extends Error {
+  constructor(message = "The server cannot find the requested resource") {
+    super(message);
+    this.name = "Not Found";
+    this.code = 404;
+  }
+}
+
 class Unauthorized extends Error {
   constructor(message = "Lacks valid authentication credentials") {
     super(message);
@@ -23,4 +31,4 @@ class Teapot extends Error {
   }
 }
 
-export { BadRequest, Unauthorized, Teapot };
+export { BadRequest, NotFound, Unauthorized, Teapot };
