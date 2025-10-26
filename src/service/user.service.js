@@ -1,6 +1,9 @@
+import { sendEmail } from "../messaging/emailService.js"
 import CredentialRepository from "../repositories/credential.repository.js";
 import AttendeeRepository from "../repositories/attendee.repository.js";
 import OrganizerRepository from "../repositories/organizer.repository.js";
+import { BadRequest, NotFound, Unauthorized } from "../utils/errors/error.400.js";
+import codeManager from "../utils/codeManager.js";
 
 const credentialRepo = new CredentialRepository();
 const attendeeRepo = new AttendeeRepository();
@@ -57,10 +60,46 @@ export async function registerService(data) {
       );
       result.idOrganizer = idOrganizer;
     } else {
-      throw new Error(`Invalid role or missing role-specific data: ${role}`);
+      throw new BadRequest(`Invalid role or missing role-specific data: ${role}`);
     }
 
     return result;
+  } catch (error) {
+    throw error;
+  }
+}
+
+//TODO: It needs to return a JWT with the email associate
+export async function recoverEmailService({ email, code }) {
+  try {
+    const emailExists = await credentialRepo.isEmailTaken(email)
+    if (!emailExists) {
+      throw new NotFound("Email not found")
+    }
+    const isValidCode = codeManager.verifyEmailCode(email, code);
+    if (!isValidCode) {
+      throw new Unauthorized("Invalid credentials")
+    }
+    
+    return true;
+
+  } catch (error) {
+    throw error; 
+  }
+}
+
+export async function sendRecoverCodeToEmailService(email) {
+  try {
+    const emailExists = await credentialRepo.isEmailTaken(email)
+    if (!emailExists) {
+      throw new NotFound("Email not found")
+    }
+    const code = codeManager.storeCode(email);
+    await sendEmail({
+      to: email,
+      subject: "Código de recuperación de cuenta",
+      text: `Tu código de recuperación es: ${code}\nEste código expirará en 10 minutos.`,
+    });
   } catch (error) {
     throw error;
   }

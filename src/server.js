@@ -5,7 +5,6 @@ import express from 'express';
 import { errorHandler } from './utils/errors/handler.js';
 import loginRoute from './routes/login.route.js'
 import userRoute from './routes/user.route.js'
-
 import { initDatabase } from './config/initPostgre.js';
 
 

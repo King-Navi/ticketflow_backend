@@ -1,7 +1,6 @@
 
 import { Op, Sequelize } from "sequelize";
 import Credential from "../model_db/Credential.js";
-// 'bcryptjs'
 import bcrypt from "bcrypt";
 import crypto from "node:crypto";
 
@@ -62,7 +61,7 @@ export default class CredentialRepository {
    */
   async isValidPassword(nickname, plain) {
     const user = await this.findCredentialByNickName(nickname);
-    
+
     if (!user?.passwordHash) return false;
     console.log(plain)
     console.log(user.passwordHash)
@@ -91,22 +90,10 @@ export default class CredentialRepository {
   async registerCredential({ email, nickname, passwordHash, role }) {
     try {
       const normalizedEmail = email.toLowerCase();
-      const normalizedNick = nickname?.toLowerCase();
-      const existing = await this.model.findOne({
-        where: {
-          [Op.or]: [
-            { email: normalizedEmail },
-            normalizedNick ? Sequelize.where(
-              Sequelize.fn("LOWER", Sequelize.col("nickname")),
-              normalizedNick
-            ) : null,
-          ].filter(Boolean),
-        },
-      });
-
-      if (existing) {
-        throw new Error("Email or nickname already exists.");
+      if (await this.isEmailTaken(normalizedEmail)) {
+        throw new Error("Email already exists.");
       }
+
       const saltRounds = SALT_ROUND;
       const hashedPassword = await bcrypt.hash(passwordHash, saltRounds);
 
@@ -128,4 +115,40 @@ export default class CredentialRepository {
       throw error;
     }
   }
+  
+  /**
+   * Checks if an email is already registered in the Credential table.
+   *
+   * Performs a case-insensitive search.
+   *
+   * @async
+   * @param {string} email - The email to verify.
+   * @returns {Promise<boolean>} Returns `true` if the email is already in use, `false` otherwise.
+   *
+   * @throws {Error} Throws a connection error if the database is unreachable.
+   * @throws {Error} Throws a database error for invalid queries or schema issues.
+   */
+  async isEmailTaken(email) {
+    try {
+      const normalizedEmail = email.toLowerCase();
+
+      const existing = await this.model.findOne({
+        where: Sequelize.where(
+          Sequelize.fn("LOWER", Sequelize.col("email")),
+          normalizedEmail
+        ),
+      });
+
+      return !!existing;
+    } catch (error) {
+      if (error instanceof Sequelize.ConnectionError) {
+        throw new Error("Cannot connect to the database.");
+      }
+      if (error instanceof Sequelize.DatabaseError) {
+        throw new Error("Database error occurred.");
+      }
+      throw error;
+    }
+  }
+
 }

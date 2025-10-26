@@ -1,4 +1,4 @@
-import { registerService } from "../service/user.service.js"
+import { recoverEmailService, registerService, sendRecoverCodeToEmailService } from "../service/user.service.js"
 
 
 export async function registerController(req, res) {
@@ -16,4 +16,26 @@ export async function registerController(req, res) {
             details: error.message,
         });
     }
+}
+
+//TODO:validation strcut with JOI
+export async function recoverEmailController(req, res) {
+    const data = req.body;
+    let result = await recoverEmailService(data);
+    return res.status(201).json({ message: result});
+}
+//TODO:validation strcut with JOI
+export async function sendRecoverCodeToEmailController(req, res) {
+    try {
+        const email = req.body.email;
+        await sendRecoverCodeToEmailService(email)
+        return res.status(201).json({
+            message: "OK"
+        });
+    } catch (error) {
+        console.error(error)
+    }
+    return res.status(400).json({
+            message: "OK"
+        });
 }

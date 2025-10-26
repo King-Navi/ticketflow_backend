@@ -1,7 +1,7 @@
 import express from 'express';
 import { validateBody } from "../middlewares/validateBody.js";
 import registerSchema from '../middlewares/schemes/register.schem.js';
-import {registerController} from "../controller/user.controller.js"
+import {recoverEmailController, registerController, sendRecoverCodeToEmailController} from "../controller/user.controller.js"
 const router = express.Router();
 
 //TODO: doc in .yaml
@@ -14,6 +14,14 @@ router.post(`${LOGIN_ROUTE}`,
     validateBody(registerSchema),
     registerController
 );
+
+router.post(`${LOGIN_ROUTE}/email`,
+    recoverEmailController
+);
+router.post(`${LOGIN_ROUTE}/code`,
+    sendRecoverCodeToEmailController
+);
+
 
 
 
