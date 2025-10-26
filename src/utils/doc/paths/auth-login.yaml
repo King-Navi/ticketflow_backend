@@ -1,0 +1,57 @@
+post:
+  tags: [Auth]
+  operationId: login
+  summary: Inicia sesión
+  description: Valida credenciales y retorna un token JWT.
+  security: []  
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "../schemas/auth.yaml#/LoginRequest"
+        examples:
+          correcto:
+            value:
+              username: "oscarinin"
+              passwordHash: "miSecreta123"
+  responses:
+    "200":
+      description: Autenticación exitosa
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/auth.yaml#/LoginResponse"
+          examples:
+            ejemplo:
+              value:
+                accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                tokenType: "Bearer"
+                expiresIn: 3600
+    "400":
+      description: Error de validación (body inválido)
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            faltan_campos:
+              value: { message: "Request body cannot be empty." }
+    "401":
+      description: Credenciales inválidas
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            invalido:
+              value: { message: "Invalid credentials" }
+    "404":
+      description: Usuario no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            invalido:
+              value: { message: "User not found" }

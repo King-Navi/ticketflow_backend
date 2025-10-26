@@ -16,7 +16,6 @@ export async function loginService(username, password) {
   if (!credential) {
     throw new NotFound("User not found");
   }
-
   const isPasswordValid = await credentialRepo.isValidPassword(username, password);
   if (!isPasswordValid) {
     throw new Unauthorized("Invalid credentials");

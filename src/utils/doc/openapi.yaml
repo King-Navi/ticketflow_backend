@@ -1,0 +1,36 @@
+openapi: 3.1.0
+info:
+  title: Mi API
+  version: 1.0.0
+  description: API de ejemplo para TicketFlow
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
+
+servers:
+  - url: https://dominio.com
+    description: Producción
+  - url: http://localhost:6970
+    description: Desarrollo
+
+security:
+  - bearerAuth: []
+
+paths:
+  /v1/login:
+    $ref: "./paths/auth-login.yaml"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    LoginRequest:
+      $ref: "./schemas/auth.yaml#/LoginRequest"
+    LoginResponse:
+      $ref: "./schemas/auth.yaml#/LoginResponse"
+    Error:
+      $ref: "./schemas/common.yaml#/Error"

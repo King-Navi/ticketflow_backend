@@ -1,0 +1,24 @@
+LoginRequest:
+  type: object
+  additionalProperties: false
+  required: [username, passwordHash]
+  properties:
+    username:
+      type: string
+      minLength: 3
+      maxLength: 50
+      description: Debe tener entre 3 y 50 caracteres.
+      examples: ["ivan"]
+    passwordHash:
+      type: string
+      minLength: 6
+      format: password
+      description: Hash o contraseña mínima de 6 caracteres.
+
+LoginResponse:
+  type: object
+  required: [accessToken, tokenType, expiresIn]
+  properties:
+    accessToken:
+      type: string
+      description: JWT de acceso

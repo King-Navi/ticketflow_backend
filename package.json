@@ -20,9 +20,12 @@
     "prepare": "husky",
     "postgre:build": "node src/config/generate.models.js",
     "swagger:docs": "",
-    "docker": ""
+    "docker": "",
+    "redocly:lint": "npx redocly lint src/utils/doc/openapi.yaml",
+    "redocly:build": "npx redocly build-docs src/utils/doc/openapi.yaml -o src/utils/doc/docs.html"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "joi": "^18.0.1",
@@ -30,9 +33,14 @@
     "nodemon": "^3.1.10",
     "pg": "^8.16.3",
     "pg-hstore": "^2.3.4",
-    "sequelize-auto": "^0.8.8"
+    "sequelize-auto": "^0.8.8",
+    "swagger-ui-dist": "^5.29.5",
+    "swagger-ui-express": "^5.0.1",
+    "yaml": "^2.8.1",
+    "yamljs": "^0.3.0"
   },
   "devDependencies": {
+    "@redocly/cli": "^2.8.0",
     "husky": "^9.1.7",
     "jest": "^30.2.0"
   }

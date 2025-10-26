@@ -1,12 +1,16 @@
 
 import { Op, Sequelize } from "sequelize";
 import Credential from "../model_db/Credential.js";
+// 'bcryptjs'
+import bcrypt from "bcrypt";
+import crypto from "node:crypto";
+
+const SALT_ROUND = 12;
 
 export default class CredentialRepository {
   constructor(model = Credential) {
     this.model = model;
   }
-
 
   /**
    * Finds a credential (user) by their nickname.
@@ -50,35 +54,76 @@ export default class CredentialRepository {
    *
    * @async
    * @param {string} nickname - The nickname of the user whose password should be verified.
-   * @param {string} passwordHash - The encrypted or hashed password to compare.
+   * @param {string} plain - The encrypted or hashed password to compare.
    * @returns {Promise<boolean>} Returns `true` if the password matches, or `false` if it doesn't or if the user is not found.
    * 
    * @throws {Error} Throws a connection error if the database is unreachable.
    * @throws {Error} Throws a database error for invalid queries or schema issues.
    */
-  async isValidPassword(nickname, passwordHash) {
+  async isValidPassword(nickname, plain) {
+    const user = await this.findCredentialByNickName(nickname);
+    
+    if (!user?.passwordHash) return false;
+    console.log(plain)
+    console.log(user.passwordHash)
+
+    return bcrypt.compare(plain, user.passwordHash);
+
+  }
+
+
+  /**
+   * Registers a new credential (user account).
+   *
+   * Hashes the password, validates uniqueness of email and nickname,
+   * and stores a new record in the "Credential" table.
+   *
+   * @async
+   * @param {Object} data - Credential data.
+   * @param {string} data.email - The user's email address.
+   * @param {string} data.nickname - The user's chosen nickname.
+   * @param {string} data.passwordHash - Plain password (will be hashed before saving).
+   * @param {string} data.role - The user's role ('attendee', 'organizer', or 'admin').
+   * @returns {Promise<number>} The ID of the newly created credential.
+   *
+   * @throws {Error} If email or nickname already exist, or a database error occurs.
+   */
+  async registerCredential({ email, nickname, passwordHash, role }) {
     try {
-      const user = await this.model.findOne({
-        where: Sequelize.where(
-          Sequelize.fn('LOWER', Sequelize.col('nickname')),
-          Op.eq,
-          nickname.toLowerCase()
-        ),
+      const normalizedEmail = email.toLowerCase();
+      const normalizedNick = nickname?.toLowerCase();
+      const existing = await this.model.findOne({
+        where: {
+          [Op.or]: [
+            { email: normalizedEmail },
+            normalizedNick ? Sequelize.where(
+              Sequelize.fn("LOWER", Sequelize.col("nickname")),
+              normalizedNick
+            ) : null,
+          ].filter(Boolean),
+        },
       });
 
-      if (!user) {
-        return false;
+      if (existing) {
+        throw new Error("Email or nickname already exists.");
       }
+      const saltRounds = SALT_ROUND;
+      const hashedPassword = await bcrypt.hash(passwordHash, saltRounds);
 
-      const isMatch = user.passwordHash === passwordHash;
+      const newCredential = await this.model.create({
+        email: normalizedEmail,
+        nickname,
+        passwordHash: hashedPassword,
+        role,
+      });
 
-      return isMatch;
+      return newCredential.idCredential;
     } catch (error) {
       if (error instanceof Sequelize.ConnectionError) {
-        throw new Error('Cannot connect to the database.');
+        throw new Error("Cannot connect to the database.");
       }
       if (error instanceof Sequelize.DatabaseError) {
-        throw new Error('Database error occurred.');
+        throw new Error("Database error occurred.");
       }
       throw error;
     }
