@@ -37,6 +37,9 @@ export async function loginService(username, password) {
   }
   if (!userProfile) throw new NotFound("User profile not found");
   const idUser = userProfile.idAttendee || userProfile.idOrganizer || userProfile.idAdmin;
+  
+  await credentialRepo.updateLastLogin(credential.idCredential);
+  
   return generateToken(
     idUser,
     credential.email,

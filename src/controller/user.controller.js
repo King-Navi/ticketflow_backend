@@ -18,24 +18,30 @@ export async function registerController(req, res) {
     }
 }
 
-//TODO:validation strcut with JOI
 export async function recoverEmailController(req, res) {
-    const data = req.body;
-    let result = await recoverEmailService(data);
-    return res.status(201).json({ message: result});
+    try {
+        const data = req.body;
+        let result = await recoverEmailService(data);
+        return res.status(201).json({ message: result });
+    } catch (error) {
+        console.error(error)
+        return res.status(error.code).json({
+            message: "OK"
+        });
+    }
+
 }
-//TODO:validation strcut with JOI
 export async function sendRecoverCodeToEmailController(req, res) {
     try {
         const email = req.body.email;
         await sendRecoverCodeToEmailService(email)
-        return res.status(201).json({
-            message: "OK"
+        return res.status(202).json({
+            message: "Code send"
         });
     } catch (error) {
         console.error(error)
     }
     return res.status(400).json({
-            message: "OK"
-        });
+        message: "OK"
+    });
 }

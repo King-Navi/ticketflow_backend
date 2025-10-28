@@ -4,11 +4,16 @@ import Credential from "../model_db/Credential.js";
 import bcrypt from "bcrypt";
 import crypto from "node:crypto";
 
-const SALT_ROUND = 12;
+const SALT_ROUND = process.env.SALT_ROUND;
+const MIN_LENGTH_PASSWORD = 6;
 
 export default class CredentialRepository {
   constructor(model = Credential) {
     this.model = model;
+  }
+
+  async findById(idCredential) {
+    return this.model.findByPk(idCredential);
   }
 
   /**
@@ -45,6 +50,28 @@ export default class CredentialRepository {
     }
   }
 
+  async findCredentialByEmail(email) {
+    try {
+      let user = await this.model.findOne({
+        where: Sequelize.where(
+          Sequelize.fn("LOWER", Sequelize.col("email")),
+          Op.eq,
+          email.toLowerCase()
+        ),
+      });
+
+      return user;
+    } catch (error) {
+      if (error instanceof Sequelize.ConnectionError) {
+        throw new Error("Cannot connect to the database.");
+      }
+      if (error instanceof Sequelize.DatabaseError) {
+        throw new Error("Database error occurred.");
+      }
+      throw error
+    }
+  }
+
   /**
    * Validates whether the provided password hash matches the stored one for a given nickname.
    *
@@ -63,8 +90,6 @@ export default class CredentialRepository {
     const user = await this.findCredentialByNickName(nickname);
 
     if (!user?.passwordHash) return false;
-    console.log(plain)
-    console.log(user.passwordHash)
 
     return bcrypt.compare(plain, user.passwordHash);
 
@@ -115,7 +140,7 @@ export default class CredentialRepository {
       throw error;
     }
   }
-  
+
   /**
    * Checks if an email is already registered in the Credential table.
    *
@@ -140,6 +165,113 @@ export default class CredentialRepository {
       });
 
       return !!existing;
+    } catch (error) {
+      if (error instanceof Sequelize.ConnectionError) {
+        throw new Error("Cannot connect to the database.");
+      }
+      if (error instanceof Sequelize.DatabaseError) {
+        throw new Error("Database error occurred.");
+      }
+      throw error;
+    }
+
+  }
+
+  /**
+   * 
+   * @param {int} idCredential 
+   * @param {string} oldPassword 
+   * @param {string} newPassword 
+   * @returns {Promise<boolean>} true if updated
+   */
+  async updatePassword(idCredential, oldPassword, newPassword) {
+    try {
+      if (!idCredential) throw new Error("idCredential is required.");
+      if (!oldPassword || !newPassword) throw new Error("Both oldPassword and newPassword are required.");
+      if (newPassword.length < MIN_LENGTH_PASSWORD) throw new Error("New password must be at least 8 characters.");
+
+      const user = await this.findById(idCredential);
+      if (!user) throw new Error("Credential not found.");
+
+      const matches = await bcrypt.compare(oldPassword, user.passwordHash || "");
+      if (!matches) throw new Error("Old password is incorrect.");
+
+      const sameAsBefore = await bcrypt.compare(newPassword, user.passwordHash || "");
+      if (sameAsBefore) throw new Error("New password cannot be the same as the current password.");
+
+      const hashed = await bcrypt.hash(newPassword, SALT_ROUND);
+
+      await this.model.update(
+        { passwordHash: hashed, updatedAt: new Date() },
+        { where: { idCredential } }
+      );
+
+      return true;
+    } catch (error) {
+      if (error instanceof Sequelize.ConnectionError) {
+        throw new Error("Cannot connect to the database.");
+      }
+      if (error instanceof Sequelize.DatabaseError) {
+        throw new Error("Database error occurred.");
+      }
+      throw error;
+    }
+  }
+
+  async updateInfo(idCredential, email, nickname) {
+    try {
+      if (!idCredential) throw new Error("idCredential is required.");
+
+      const updates = {};
+      if (typeof email !== "undefined" && email !== null) {
+        const normalized = String(email).toLowerCase();
+        if (await this.isEmailTaken(normalized, idCredential)) {
+          throw new Error("Email already exists.");
+        }
+        updates.email = normalized;
+      }
+      if (typeof nickname !== "undefined") {
+        updates.nickname = nickname;
+      }
+
+      if (Object.keys(updates).length === 0) {
+        const current = await this.findById(idCredential);
+        if (!current) throw new Error("Credential not found.");
+        return this.sanitize(current);
+      }
+
+      const [count, rows] = await this.model.update(
+        { ...updates, updatedAt: new Date() },
+        { where: { idCredential }, returning: true }
+      );
+
+      if (count === 0) throw new Error("Credential not found.");
+      return this.sanitize(rows[0]);
+    } catch (error) {
+      if (error instanceof Sequelize.ConnectionError) {
+        throw new Error("Cannot connect to the database.");
+      }
+      if (error instanceof Sequelize.DatabaseError) {
+        throw new Error("Database error occurred.");
+      }
+      throw error;
+    }
+
+
+
+  }
+
+  async updateLastLogin(idCredential, when = new Date()) {
+    try {
+      if (!idCredential) throw new Error("idCredential is required.");
+
+      const [count, rows] = await this.model.update(
+        { lastLogin: when, updatedAt: new Date() },
+        { where: { idCredential }, returning: true }
+      );
+
+      if (count === 0) throw new Error("Credential not found.");
+      return this.sanitize(rows[0]);
     } catch (error) {
       if (error instanceof Sequelize.ConnectionError) {
         throw new Error("Cannot connect to the database.");

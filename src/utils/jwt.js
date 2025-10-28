@@ -20,10 +20,11 @@ export function verifyJwtToken(token) {
  * @param {string} nickname - The user's nickname or alias.
  * @param {string} firstName - The user's first name (or display name).
  * @param {string|string[]} typeUser - The user's role or list of roles.
+ * @param {string} expires - time of duration
  * 
  * @returns {string} A signed JWT string containing user information.
  */
-export function generateToken(idUser, email, nickname, firstName, typeUser) {
+export function generateToken(idUser, email, nickname, firstName, typeUser, expires="23h" ) {
   return jwt.sign(
     {
       id: idUser,
@@ -33,6 +34,6 @@ export function generateToken(idUser, email, nickname, firstName, typeUser) {
       typeUser: typeUser,
     },
     process.env.JWT_SECRET,
-    { expiresIn: "23h" }
+    { expiresIn: expires }
   );
 }

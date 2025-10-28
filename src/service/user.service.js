@@ -4,6 +4,9 @@ import AttendeeRepository from "../repositories/attendee.repository.js";
 import OrganizerRepository from "../repositories/organizer.repository.js";
 import { BadRequest, NotFound, Unauthorized } from "../utils/errors/error.400.js";
 import codeManager from "../utils/codeManager.js";
+import { loginService } from "./login.service.js";
+import { generateToken } from "../utils/jwt.js";
+import { resolveUserRole, ROLE } from "../model_db/utils/role.js";
 
 const credentialRepo = new CredentialRepository();
 const attendeeRepo = new AttendeeRepository();
@@ -69,7 +72,34 @@ export async function registerService(data) {
   }
 }
 
-//TODO: It needs to return a JWT with the email associate
+/**
+ * Authenticate a user by nickname and password, resolve their role,
+ * load the corresponding profile, and return a signed JWT.
+ * Security note: this method throws generic `Unauthorized`/`NotFound` errors
+ * to avoid leaking sensitive details during authentication.
+ *
+ * @param {string} username - User nickname (login identifier).
+ * @param {string} password - Plain-text password to verify.
+ * @returns {Promise<string>} A signed JWT string containing user id, email, nickname, first name, and role code.
+ *
+ * @throws {NotFound} If the credential does not exist or the user profile cannot be found.
+ * @throws {Unauthorized} If the password is invalid or the resolved role is unsupported.
+ *
+ * @example
+ * ```js
+ * try {
+ *   const token = await loginService('john_doe', 'P@ssw0rd!');
+ *   // Use token in Authorization header: `Bearer ${token}`
+ * } catch (err) {
+ *   if (err instanceof Unauthorized) {
+ *     // handle invalid credentials
+ *   }
+ *   if (err instanceof NotFound) {
+ *     // handle missing user/profile
+ *   }
+ * }
+ * ```
+ */
 export async function recoverEmailService({ email, code }) {
   try {
     const emailExists = await credentialRepo.isEmailTaken(email)
@@ -80,11 +110,35 @@ export async function recoverEmailService({ email, code }) {
     if (!isValidCode) {
       throw new Unauthorized("Invalid credentials")
     }
-    
-    return true;
+    const credential = await credentialRepo.findCredentialByEmail(email);
+    const { roleName, roleCode } = resolveUserRole(credential);
+    let userProfile = null;
+    switch (roleName) {
+      case ROLE.ATTENDEE:
+        userProfile = await attendeeRepo.findAttendeeByCredentialId(credential.idCredential);
+        break;
+      case ROLE.ORGANIZER:
+        userProfile = await organizerRepo.findOrganizerByCredentialId(credential.idCredential);
+        break;
+      case ROLE.ADMIN:
+        userProfile = { idAdmin: credential.idCredential, firstName: credential.nickname };
+        break;
+      default:
+        throw new Unauthorized("Unsupported role");
+    }
+    if (!userProfile) throw new NotFound("User profile not found");
+    const idUser = userProfile.idAttendee || userProfile.idOrganizer || userProfile.idAdmin;
+    return generateToken(
+      idUser,
+      credential.email,
+      credential.nickname,
+      userProfile.firstName,
+      roleCode,
+      "1h"
+    );
 
   } catch (error) {
-    throw error; 
+    throw error;
   }
 }
 
@@ -95,6 +149,9 @@ export async function sendRecoverCodeToEmailService(email) {
       throw new NotFound("Email not found")
     }
     const code = codeManager.storeCode(email);
+    if (process.env.DEBUG === 'true') {
+      console.log(code)
+    }
     await sendEmail({
       to: email,
       subject: "Código de recuperación de cuenta",

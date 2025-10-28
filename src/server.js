@@ -3,6 +3,7 @@ import https from 'https'
 import http from 'http'
 import express from 'express';
 import { errorHandler } from './utils/errors/handler.js';
+import authRoute from './routes/auth.route.js'
 import loginRoute from './routes/login.route.js'
 import userRoute from './routes/user.route.js'
 import { initDatabase } from './config/initPostgre.js';
@@ -33,6 +34,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(loginRoute);
 app.use(userRoute);
+
 // ... rutes
 
 app.use("/spec", express.static(specDir));
