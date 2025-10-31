@@ -16,7 +16,7 @@
   "main": "src/server.js",
   "scripts": {
     "start": "nodemon src/index.js",
-    "test": "jest",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "prepare": "husky",
     "postgre:build": "node src/config/generate.models.js",
     "swagger:docs": "",
