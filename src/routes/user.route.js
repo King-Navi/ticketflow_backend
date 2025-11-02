@@ -44,7 +44,7 @@ router.post(`${LOGIN_ROUTE}/code`,
 
 
 router.post(`${LOGIN_ROUTE}/profile/edit`,
-    authRequired
+    authRequired()
 );
 
 export default router;

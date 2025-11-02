@@ -15,7 +15,7 @@ const AUTH_ROUTE = "/v1/auth";
  */
 
 router.post(`${AUTH_ROUTE}/profile/reset`,
-    authRequired
+    authRequired()
     
 );
 

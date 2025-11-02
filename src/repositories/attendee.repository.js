@@ -25,7 +25,6 @@ export default class AttendeeRepository {
 
       return attendee;
     } catch (error) {
-      console.log(error)
       if (error instanceof Sequelize.ConnectionError) {
         throw new Error("Cannot connect to the database.");
       }

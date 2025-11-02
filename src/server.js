@@ -1,11 +1,15 @@
 import dotenv from 'dotenv';
+dotenv.config();
 import https from 'https'
 import http from 'http'
 import express from 'express';
 import { errorHandler } from './utils/errors/handler.js';
 import authRoute from './routes/auth.route.js'
+import eventRoute from './routes/event.route.js'
+import locationRoute from './routes/locations.route.js'
 import loginRoute from './routes/login.route.js'
 import userRoute from './routes/user.route.js'
+
 import { initDatabase } from './config/initPostgre.js';
 
 
@@ -13,7 +17,6 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import path from "path";
 import swaggerUi from "swagger-ui-express";
-dotenv.config();
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -24,14 +27,16 @@ const httpPort = 6970;
 
 const app = express();
 
-const specDir  = path.join(__dirname, "utils/doc");       // <-- cambia si tu server.js NO está en la raíz
-const specFile = path.join(specDir, "openapi.yaml");          // nombre exacto (yaml vs yml)
+const specDir  = path.join(__dirname, "utils/doc");
+const specFile = path.join(specDir, "openapi.yaml");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 
-
+app.use(authRoute);
+app.use(eventRoute);
+app.use(locationRoute);
 app.use(loginRoute);
 app.use(userRoute);
 

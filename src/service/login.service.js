@@ -36,16 +36,28 @@ export async function loginService(username, password) {
       throw new Unauthorized("Unsupported role");
   }
   if (!userProfile) throw new NotFound("User profile not found");
-  const idUser = userProfile.idAttendee || userProfile.idOrganizer || userProfile.idAdmin;
-  
+  const profileId =
+    userProfile.attendee_id ??
+    userProfile.organizer_id ??
+    userProfile.admin_id;
+
+  const firstName =
+    userProfile.first_name ??
+    userProfile.firstName ??
+    credential.nickname;
+  if (profileId == null) {
+    throw new Error("Profile id could not be determined.");
+  }
+
   await credentialRepo.updateLastLogin(credential.credential_id);
-  
+
   return generateToken(
-    idUser,
+    profileId,
     credential.email,
     credential.nickname,
-    userProfile.firstName,
-    roleCode
+    firstName,
+    roleCode,
+    credential.credential_id
   );
 
 }

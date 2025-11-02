@@ -29,3 +29,10 @@ export function resolveUserRole(credential) {
     roleCode: ROLE_CODE[roleName],
   };
 }
+
+export function toRoleCode(value) {
+  if (typeof value === "number") return value;
+  if (!value) return undefined;
+  const name = String(value).toLowerCase();
+  return ROLE_CODE[name];
+}
