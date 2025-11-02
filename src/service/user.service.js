@@ -34,23 +34,23 @@ const organizerRepo = new OrganizerRepository();
  */
 export async function registerService(data) {
   const { email, nickname, passwordHash, role, attendee, organizer } = data;
-
+  
   try {
-    const idCredential = await credentialRepo.registerCredential({
+    const credential_id = await credentialRepo.registerCredential({
       email,
       nickname,
       passwordHash,
       role,
     });
 
-    let result = { idCredential };
+    let result = { credential_id: credential_id };
 
     if (role === "attendee" && attendee) {
       const idAttendee = await attendeeRepo.registerAttendee(
         attendee.firstName,
         attendee.lastName,
         attendee.middleName || null,
-        idCredential
+        credential_id
       );
       result.idAttendee = idAttendee;
     } else if (role === "organizer" && organizer) {
@@ -58,11 +58,12 @@ export async function registerService(data) {
         organizer.firstName,
         organizer.lastName,
         organizer.middleName || null,
-        idCredential,
+        credential_id,
         organizer.idCompany || null
       );
       result.idOrganizer = idOrganizer;
     } else {
+      
       throw new BadRequest(`Invalid role or missing role-specific data: ${role}`);
     }
 
@@ -115,13 +116,13 @@ export async function recoverEmailService({ email, code }) {
     let userProfile = null;
     switch (roleName) {
       case ROLE.ATTENDEE:
-        userProfile = await attendeeRepo.findAttendeeByCredentialId(credential.idCredential);
+        userProfile = await attendeeRepo.findAttendeeByCredentialId(credential.credential_id);
         break;
       case ROLE.ORGANIZER:
-        userProfile = await organizerRepo.findOrganizerByCredentialId(credential.idCredential);
+        userProfile = await organizerRepo.findOrganizerByCredentialId(credential.credential_id);
         break;
       case ROLE.ADMIN:
-        userProfile = { idAdmin: credential.idCredential, firstName: credential.nickname };
+        userProfile = { idAdmin: credential.credential_id, firstName: credential.nickname };
         break;
       default:
         throw new Unauthorized("Unsupported role");

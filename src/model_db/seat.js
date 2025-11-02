@@ -1,43 +1,53 @@
 import _sequelize from 'sequelize';
 const { Model, Sequelize } = _sequelize;
 
-export default class Reservation extends Model {
+export default class seat extends Model {
   static init(sequelize, DataTypes) {
   return super.init({
-    idReservation: {
+    seat_id: {
       autoIncrement: true,
       autoIncrementIdentity: true,
       type: DataTypes.INTEGER,
       allowNull: false,
       primaryKey: true
     },
-    expiration: {
-      type: DataTypes.DATEONLY,
+    seat_no: {
+      type: DataTypes.STRING(100),
       allowNull: false
     },
-    startDate: {
-      type: DataTypes.DATEONLY,
+    row_no: {
+      type: DataTypes.STRING(100),
       allowNull: false
     },
-    idAttendee: {
+    section_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'Attendee',
-        key: 'idAttendee'
+        model: 'section',
+        key: 'section_id'
       }
     }
   }, {
     sequelize,
-    tableName: 'Reservation',
+    tableName: 'seat',
     schema: 'public',
-    timestamps: false,
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    underscored: true,
+    freezeTableName: true,
     indexes: [
       {
-        name: "Reservation_pkey",
+        name: "idx_seat_section_id",
+        fields: [
+          { name: "section_id" },
+        ]
+      },
+      {
+        name: "seat_pkey",
         unique: true,
         fields: [
-          { name: "idReservation" },
+          { name: "seat_id" },
         ]
       },
     ]

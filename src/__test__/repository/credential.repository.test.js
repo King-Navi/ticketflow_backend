@@ -26,7 +26,7 @@ jest.unstable_mockModule("sequelize", () => {
   };
 });
 
-jest.unstable_mockModule("../../model_db/Credential.js", () => {
+jest.unstable_mockModule("../../model_db/credential.js", () => {
   return {
     default: {},
   };

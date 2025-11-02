@@ -1,10 +1,10 @@
 import _sequelize from 'sequelize';
 const { Model, Sequelize } = _sequelize;
 
-export default class Credential extends Model {
+export default class credential extends Model {
   static init(sequelize, DataTypes) {
   return super.init({
-    idCredential: {
+    credential_id: {
       autoIncrement: true,
       autoIncrementIdentity: true,
       type: DataTypes.INTEGER,
@@ -14,13 +14,14 @@ export default class Credential extends Model {
     email: {
       type: DataTypes.STRING(100),
       allowNull: false,
-      unique: "Credential_email_key"
+      unique: "credential_email_key"
     },
     nickname: {
       type: DataTypes.STRING(100),
-      allowNull: true
+      allowNull: false,
+      unique: "credential_nickname_key"
     },
-    passwordHash: {
+    password_hash: {
       type: DataTypes.STRING(255),
       allowNull: false
     },
@@ -28,38 +29,49 @@ export default class Credential extends Model {
       type: DataTypes.STRING(50),
       allowNull: false
     },
-    isActive: {
+    is_active: {
       type: DataTypes.BOOLEAN,
-      allowNull: true,
+      allowNull: false,
       defaultValue: true
     },
-    isEmailVerified: {
+    is_email_verified: {
       type: DataTypes.BOOLEAN,
-      allowNull: true,
+      allowNull: false,
       defaultValue: false
     },
-    lastLogin: {
+    last_login: {
       type: DataTypes.DATE,
       allowNull: true
     }
   }, {
     sequelize,
-    tableName: 'Credential',
+    tableName: 'credential',
     schema: 'public',
     timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    underscored: true,
+    freezeTableName: true,
     indexes: [
       {
-        name: "Credential_email_key",
+        name: "credential_email_key",
         unique: true,
         fields: [
           { name: "email" },
         ]
       },
       {
-        name: "Credential_pkey",
+        name: "credential_nickname_key",
         unique: true,
         fields: [
-          { name: "idCredential" },
+          { name: "nickname" },
+        ]
+      },
+      {
+        name: "credential_pkey",
+        unique: true,
+        fields: [
+          { name: "credential_id" },
         ]
       },
     ]

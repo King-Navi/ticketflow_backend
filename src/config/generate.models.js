@@ -24,7 +24,8 @@ const cmd = `npx sequelize-auto \
   -x ${process.env.DB_PASS_DEV} \
   -e postgres \
   -o ./src/model_db \
-  -l esm`;
+  -l esm \
+  -a ./src/config/sequelize-additional.json`;
 
 try {
   console.log("Generating models with sequelize-auto (PostgreSQL + ESM)...");

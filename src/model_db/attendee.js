@@ -1,63 +1,65 @@
 import _sequelize from 'sequelize';
 const { Model, Sequelize } = _sequelize;
 
-export default class Organizer extends Model {
+export default class attendee extends Model {
   static init(sequelize, DataTypes) {
   return super.init({
-    idOrganizer: {
+    attendee_id: {
       autoIncrement: true,
       autoIncrementIdentity: true,
       type: DataTypes.INTEGER,
       allowNull: false,
       primaryKey: true
     },
-    firstName: {
+    first_name: {
       type: DataTypes.STRING(100),
       allowNull: false
     },
-    lastName: {
+    last_name: {
       type: DataTypes.STRING(100),
       allowNull: false
     },
-    middleName: {
+    middle_name: {
       type: DataTypes.STRING(100),
       allowNull: true
     },
-    idCompany: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'Company',
-        key: 'idCompany'
-      }
-    },
-    idCredential: {
+    credential_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'Credential',
-        key: 'idCredential'
+        model: 'credential',
+        key: 'credential_id'
       },
-      unique: "Organizer_idCredential_key"
+      unique: "attendee_credential_id_key"
     }
   }, {
     sequelize,
-    tableName: 'Organizer',
+    tableName: 'attendee',
     schema: 'public',
-    timestamps: false,
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    underscored: true,
+    freezeTableName: true,
     indexes: [
       {
-        name: "Organizer_idCredential_key",
+        name: "attendee_credential_id_key",
         unique: true,
         fields: [
-          { name: "idCredential" },
+          { name: "credential_id" },
         ]
       },
       {
-        name: "Organizer_pkey",
+        name: "attendee_pkey",
         unique: true,
         fields: [
-          { name: "idOrganizer" },
+          { name: "attendee_id" },
+        ]
+      },
+      {
+        name: "idx_attendee_credential_id",
+        fields: [
+          { name: "credential_id" },
         ]
       },
     ]

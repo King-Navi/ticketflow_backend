@@ -24,13 +24,13 @@ export async function loginService(username, password) {
   let userProfile = null;
   switch (roleName) {
     case ROLE.ATTENDEE:
-      userProfile = await attendeeRepo.findAttendeeByCredentialId(credential.idCredential);
+      userProfile = await attendeeRepo.findAttendeeByCredentialId(credential.credential_id);
       break;
     case ROLE.ORGANIZER:
-      userProfile = await organizerRepo.findOrganizerByCredentialId(credential.idCredential);
+      userProfile = await organizerRepo.findOrganizerByCredentialId(credential.credential_id);
       break;
     case ROLE.ADMIN:
-      userProfile = { idAdmin: credential.idCredential, firstName: credential.nickname };
+      userProfile = { idAdmin: credential.credential_id, firstName: credential.nickname };
       break;
     default:
       throw new Unauthorized("Unsupported role");
@@ -38,7 +38,7 @@ export async function loginService(username, password) {
   if (!userProfile) throw new NotFound("User profile not found");
   const idUser = userProfile.idAttendee || userProfile.idOrganizer || userProfile.idAdmin;
   
-  await credentialRepo.updateLastLogin(credential.idCredential);
+  await credentialRepo.updateLastLogin(credential.credential_id);
   
   return generateToken(
     idUser,

@@ -1,39 +1,39 @@
 import _sequelize from 'sequelize';
 const { Model, Sequelize } = _sequelize;
 
-export default class EventLocation extends Model {
+export default class company extends Model {
   static init(sequelize, DataTypes) {
   return super.init({
-    idEventLocation: {
+    company_id: {
       autoIncrement: true,
       autoIncrementIdentity: true,
       type: DataTypes.INTEGER,
       allowNull: false,
       primaryKey: true
     },
-    city: {
+    company_name: {
       type: DataTypes.STRING(100),
       allowNull: false
     },
-    address: {
+    tax_id: {
       type: DataTypes.STRING(100),
-      allowNull: false
-    },
-    capacity: {
-      type: DataTypes.INTEGER,
       allowNull: false
     }
   }, {
     sequelize,
-    tableName: 'EventLocation',
+    tableName: 'company',
     schema: 'public',
-    timestamps: false,
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    underscored: true,
+    freezeTableName: true,
     indexes: [
       {
-        name: "EventLocation_pkey",
+        name: "company_pkey",
         unique: true,
         fields: [
-          { name: "idEventLocation" },
+          { name: "company_id" },
         ]
       },
     ]

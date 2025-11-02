@@ -1,10 +1,9 @@
 
 import { Op, Sequelize } from "sequelize";
-import Credential from "../model_db/Credential.js";
+import Credential from "../model_db/credential.js";
 import bcrypt from "bcrypt";
-import crypto from "node:crypto";
 
-const SALT_ROUND = process.env.SALT_ROUND;
+const SALT_ROUND = Number(process.env.SALT_ROUND);
 const MIN_LENGTH_PASSWORD = 6;
 
 export default class CredentialRepository {
@@ -12,8 +11,35 @@ export default class CredentialRepository {
     this.model = model;
   }
 
-  async findById(idCredential) {
-    return this.model.findByPk(idCredential);
+  /**
+   * Internal helper: returns a plain JS object without sensitive fields like password_hash.
+   * @param {Model|null} credentialInstance
+   * @returns {Object|null}
+   */
+  _sanitize(credentialInstance) {
+    if (!credentialInstance) return null;
+    const plain = credentialInstance.get({ plain: true });
+    delete plain.password_hash;
+    return plain;
+  }
+
+  /**
+   * Find credential by PK (credential_id).
+   * @param {number} credentialId
+   * @returns {Promise<Model|null>}
+   */
+  async findById(credentialId) {
+    try {
+      return await this.model.findByPk(credentialId);
+    } catch (error) {
+      if (error instanceof Sequelize.ConnectionError) {
+        throw new Error("Cannot connect to the database.");
+      }
+      if (error instanceof Sequelize.DatabaseError) {
+        throw new Error("Database error occurred.");
+      }
+      throw error;
+    }
   }
 
   /**
@@ -50,6 +76,12 @@ export default class CredentialRepository {
     }
   }
 
+  /**
+   * Finds a credential by email (case-insensitive).
+   *
+   * @param {string} email
+   * @returns {Promise<Model|null>}
+   */
   async findCredentialByEmail(email) {
     try {
       let user = await this.model.findOne({
@@ -89,9 +121,9 @@ export default class CredentialRepository {
   async isValidPassword(nickname, plain) {
     const user = await this.findCredentialByNickName(nickname);
 
-    if (!user?.passwordHash) return false;
+    if (!user?.password_hash) return false;
 
-    return bcrypt.compare(plain, user.passwordHash);
+    return bcrypt.compare(plain, user.password_hash);
 
   }
 
@@ -125,11 +157,11 @@ export default class CredentialRepository {
       const newCredential = await this.model.create({
         email: normalizedEmail,
         nickname,
-        passwordHash: hashedPassword,
+        password_hash: hashedPassword,
         role,
       });
 
-      return newCredential.idCredential;
+      return newCredential.credential_id;
     } catch (error) {
       if (error instanceof Sequelize.ConnectionError) {
         throw new Error("Cannot connect to the database.");
@@ -193,17 +225,17 @@ export default class CredentialRepository {
       const user = await this.findById(idCredential);
       if (!user) throw new Error("Credential not found.");
 
-      const matches = await bcrypt.compare(oldPassword, user.passwordHash || "");
+      const matches = await bcrypt.compare(oldPassword, user.password_hash || "");
       if (!matches) throw new Error("Old password is incorrect.");
 
-      const sameAsBefore = await bcrypt.compare(newPassword, user.passwordHash || "");
+      const sameAsBefore = await bcrypt.compare(newPassword, user.password_hash || "");
       if (sameAsBefore) throw new Error("New password cannot be the same as the current password.");
 
       const hashed = await bcrypt.hash(newPassword, SALT_ROUND);
 
       await this.model.update(
-        { passwordHash: hashed, updatedAt: new Date() },
-        { where: { idCredential } }
+        { password_hash: hashed, updatedAt: new Date() },
+        { where: { credential_id: idCredential }, returning: false, }
       );
 
       return true;
@@ -242,7 +274,7 @@ export default class CredentialRepository {
 
       const [count, rows] = await this.model.update(
         { ...updates, updatedAt: new Date() },
-        { where: { idCredential }, returning: true }
+        { where: { credential_id: idCredential }, returning: true }
       );
 
       if (count === 0) throw new Error("Credential not found.");
@@ -261,17 +293,17 @@ export default class CredentialRepository {
 
   }
 
-  async updateLastLogin(idCredential, when = new Date()) {
+  async updateLastLogin(credential_id, when = new Date()) {
     try {
-      if (!idCredential) throw new Error("idCredential is required.");
+      if (!credential_id) throw new Error("idCredential is required.");
 
       const [count, rows] = await this.model.update(
-        { lastLogin: when, updatedAt: new Date() },
-        { where: { idCredential }, returning: true }
+        { last_login: when, updatedAt: new Date() },
+        { where: { credential_id: credential_id }, returning: true }
       );
 
       if (count === 0) throw new Error("Credential not found.");
-      return this.sanitize(rows[0]);
+      return this._sanitize(rows[0]);
     } catch (error) {
       if (error instanceof Sequelize.ConnectionError) {
         throw new Error("Cannot connect to the database.");

@@ -1,73 +1,112 @@
 import _sequelize from "sequelize";
 const DataTypes = _sequelize.DataTypes;
-import _Attendee from  "./Attendee.js";
-import _Company from  "./Company.js";
-import _Credential from  "./Credential.js";
-import _Event from  "./Event.js";
-import _EventLocation from  "./EventLocation.js";
-import _Organizer from  "./Organizer.js";
-import _Payment from  "./Payment.js";
-import _PaymentMethod from  "./PaymentMethod.js";
-import _Refund from  "./Refund.js";
-import _Reservation from  "./Reservation.js";
-import _Seat from  "./Seat.js";
-import _Ticket from  "./Ticket.js";
+import _attendee from  "./attendee.js";
+import _card from  "./card.js";
+import _company from  "./company.js";
+import _credential from  "./credential.js";
+import _crypto_payment from  "./crypto_payment.js";
+import _event from  "./event.js";
+import _event_location from  "./event_location.js";
+import _event_seat from  "./event_seat.js";
+import _event_seat_status from  "./event_seat_status.js";
+import _organizer from  "./organizer.js";
+import _payment from  "./payment.js";
+import _payment_method from  "./payment_method.js";
+import _refund from  "./refund.js";
+import _refund_status from  "./refund_status.js";
+import _reservation from  "./reservation.js";
+import _seat from  "./seat.js";
+import _section from  "./section.js";
+import _ticket from  "./ticket.js";
+import _ticket_status from  "./ticket_status.js";
 
 export default function initModels(sequelize) {
-  const Attendee = _Attendee.init(sequelize, DataTypes);
-  const Company = _Company.init(sequelize, DataTypes);
-  const Credential = _Credential.init(sequelize, DataTypes);
-  const Event = _Event.init(sequelize, DataTypes);
-  const EventLocation = _EventLocation.init(sequelize, DataTypes);
-  const Organizer = _Organizer.init(sequelize, DataTypes);
-  const Payment = _Payment.init(sequelize, DataTypes);
-  const PaymentMethod = _PaymentMethod.init(sequelize, DataTypes);
-  const Refund = _Refund.init(sequelize, DataTypes);
-  const Reservation = _Reservation.init(sequelize, DataTypes);
-  const Seat = _Seat.init(sequelize, DataTypes);
-  const Ticket = _Ticket.init(sequelize, DataTypes);
+  const attendee = _attendee.init(sequelize, DataTypes);
+  const card = _card.init(sequelize, DataTypes);
+  const company = _company.init(sequelize, DataTypes);
+  const credential = _credential.init(sequelize, DataTypes);
+  const crypto_payment = _crypto_payment.init(sequelize, DataTypes);
+  const event = _event.init(sequelize, DataTypes);
+  const event_location = _event_location.init(sequelize, DataTypes);
+  const event_seat = _event_seat.init(sequelize, DataTypes);
+  const event_seat_status = _event_seat_status.init(sequelize, DataTypes);
+  const organizer = _organizer.init(sequelize, DataTypes);
+  const payment = _payment.init(sequelize, DataTypes);
+  const payment_method = _payment_method.init(sequelize, DataTypes);
+  const refund = _refund.init(sequelize, DataTypes);
+  const refund_status = _refund_status.init(sequelize, DataTypes);
+  const reservation = _reservation.init(sequelize, DataTypes);
+  const seat = _seat.init(sequelize, DataTypes);
+  const section = _section.init(sequelize, DataTypes);
+  const ticket = _ticket.init(sequelize, DataTypes);
+  const ticket_status = _ticket_status.init(sequelize, DataTypes);
 
-  PaymentMethod.belongsTo(Attendee, { as: "idAttendee_Attendee", foreignKey: "idAttendee"});
-  Attendee.hasMany(PaymentMethod, { as: "PaymentMethods", foreignKey: "idAttendee"});
-  Reservation.belongsTo(Attendee, { as: "idAttendee_Attendee", foreignKey: "idAttendee"});
-  Attendee.hasMany(Reservation, { as: "Reservations", foreignKey: "idAttendee"});
-  Event.belongsTo(Company, { as: "idCompany_Company", foreignKey: "idCompany"});
-  Company.hasMany(Event, { as: "Events", foreignKey: "idCompany"});
-  Organizer.belongsTo(Company, { as: "idCompany_Company", foreignKey: "idCompany"});
-  Company.hasMany(Organizer, { as: "Organizers", foreignKey: "idCompany"});
-  Attendee.belongsTo(Credential, { as: "idCredential_Credential", foreignKey: "idCredential"});
-  Credential.hasOne(Attendee, { as: "Attendee", foreignKey: "idCredential"});
-  Organizer.belongsTo(Credential, { as: "idCredential_Credential", foreignKey: "idCredential"});
-  Credential.hasOne(Organizer, { as: "Organizer", foreignKey: "idCredential"});
-  Seat.belongsTo(Event, { as: "idEvent_Event", foreignKey: "idEvent"});
-  Event.hasMany(Seat, { as: "Seats", foreignKey: "idEvent"});
-  Event.belongsTo(EventLocation, { as: "idEventLocation_EventLocation", foreignKey: "idEventLocation"});
-  EventLocation.hasMany(Event, { as: "Events", foreignKey: "idEventLocation"});
-  Seat.belongsTo(EventLocation, { as: "idEventLocation_EventLocation", foreignKey: "idEventLocation"});
-  EventLocation.hasMany(Seat, { as: "Seats", foreignKey: "idEventLocation"});
-  Ticket.belongsTo(Payment, { as: "idPayment_Payment", foreignKey: "idPayment"});
-  Payment.hasMany(Ticket, { as: "Tickets", foreignKey: "idPayment"});
-  Payment.belongsTo(PaymentMethod, { as: "idPaymentMethod_PaymentMethod", foreignKey: "idPaymentMethod"});
-  PaymentMethod.hasMany(Payment, { as: "Payments", foreignKey: "idPaymentMethod"});
-  Payment.belongsTo(Reservation, { as: "idReservation_Reservation", foreignKey: "idReservation"});
-  Reservation.hasMany(Payment, { as: "Payments", foreignKey: "idReservation"});
-  Ticket.belongsTo(Seat, { as: "idSeat_Seat", foreignKey: "idSeat"});
-  Seat.hasMany(Ticket, { as: "Tickets", foreignKey: "idSeat"});
-  Refund.belongsTo(Ticket, { as: "idTicket_Ticket", foreignKey: "idTicket"});
-  Ticket.hasOne(Refund, { as: "Refund", foreignKey: "idTicket"});
+  payment.belongsTo(attendee, { as: "attendee", foreignKey: "attendee_id"});
+  attendee.hasMany(payment, { as: "payments", foreignKey: "attendee_id"});
+  payment_method.belongsTo(attendee, { as: "attendee", foreignKey: "attendee_id"});
+  attendee.hasMany(payment_method, { as: "payment_methods", foreignKey: "attendee_id"});
+  reservation.belongsTo(attendee, { as: "attendee", foreignKey: "attendee_id"});
+  attendee.hasMany(reservation, { as: "reservations", foreignKey: "attendee_id"});
+  event.belongsTo(company, { as: "company", foreignKey: "company_id"});
+  company.hasMany(event, { as: "events", foreignKey: "company_id"});
+  organizer.belongsTo(company, { as: "company", foreignKey: "company_id"});
+  company.hasMany(organizer, { as: "organizers", foreignKey: "company_id"});
+  attendee.belongsTo(credential, { as: "credential", foreignKey: "credential_id"});
+  credential.hasOne(attendee, { as: "attendee", foreignKey: "credential_id"});
+  organizer.belongsTo(credential, { as: "credential", foreignKey: "credential_id"});
+  credential.hasOne(organizer, { as: "organizer", foreignKey: "credential_id"});
+  event_seat.belongsTo(event, { as: "event", foreignKey: "event_id"});
+  event.hasMany(event_seat, { as: "event_seats", foreignKey: "event_id"});
+  event.belongsTo(event_location, { as: "event_location", foreignKey: "event_location_id"});
+  event_location.hasMany(event, { as: "events", foreignKey: "event_location_id"});
+  section.belongsTo(event_location, { as: "event_location", foreignKey: "event_location_id"});
+  event_location.hasMany(section, { as: "sections", foreignKey: "event_location_id"});
+  reservation.belongsTo(event_seat, { as: "event_seat", foreignKey: "event_seat_id"});
+  event_seat.hasMany(reservation, { as: "reservations", foreignKey: "event_seat_id"});
+  ticket.belongsTo(event_seat, { as: "event_seat", foreignKey: "event_seat_id"});
+  event_seat.hasOne(ticket, { as: "ticket", foreignKey: "event_seat_id"});
+  event_seat.belongsTo(event_seat_status, { as: "event_seat_status", foreignKey: "event_seat_status_id"});
+  event_seat_status.hasMany(event_seat, { as: "event_seats", foreignKey: "event_seat_status_id"});
+  ticket.belongsTo(payment, { as: "payment", foreignKey: "payment_id"});
+  payment.hasMany(ticket, { as: "tickets", foreignKey: "payment_id"});
+  card.belongsTo(payment_method, { as: "payment_method", foreignKey: "payment_method_id"});
+  payment_method.hasOne(card, { as: "card", foreignKey: "payment_method_id"});
+  crypto_payment.belongsTo(payment_method, { as: "payment_method", foreignKey: "payment_method_id"});
+  payment_method.hasOne(crypto_payment, { as: "crypto_payment", foreignKey: "payment_method_id"});
+  payment.belongsTo(payment_method, { as: "payment_method", foreignKey: "payment_method_id"});
+  payment_method.hasMany(payment, { as: "payments", foreignKey: "payment_method_id"});
+  refund.belongsTo(refund_status, { as: "refund_status", foreignKey: "refund_status_id"});
+  refund_status.hasMany(refund, { as: "refunds", foreignKey: "refund_status_id"});
+  payment.belongsTo(reservation, { as: "reservation", foreignKey: "reservation_id"});
+  reservation.hasMany(payment, { as: "payments", foreignKey: "reservation_id"});
+  event_seat.belongsTo(seat, { as: "seat", foreignKey: "seat_id"});
+  seat.hasMany(event_seat, { as: "event_seats", foreignKey: "seat_id"});
+  seat.belongsTo(section, { as: "section", foreignKey: "section_id"});
+  section.hasMany(seat, { as: "seats", foreignKey: "section_id"});
+  refund.belongsTo(ticket, { as: "ticket", foreignKey: "ticket_id"});
+  ticket.hasOne(refund, { as: "refund", foreignKey: "ticket_id"});
+  ticket.belongsTo(ticket_status, { as: "ticket_status", foreignKey: "ticket_status_id"});
+  ticket_status.hasMany(ticket, { as: "tickets", foreignKey: "ticket_status_id"});
 
   return {
-    Attendee,
-    Company,
-    Credential,
-    Event,
-    EventLocation,
-    Organizer,
-    Payment,
-    PaymentMethod,
-    Refund,
-    Reservation,
-    Seat,
-    Ticket,
+    attendee,
+    card,
+    company,
+    credential,
+    crypto_payment,
+    event,
+    event_location,
+    event_seat,
+    event_seat_status,
+    organizer,
+    payment,
+    payment_method,
+    refund,
+    refund_status,
+    reservation,
+    seat,
+    section,
+    ticket,
+    ticket_status,
   };
 }

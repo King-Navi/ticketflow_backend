@@ -1,55 +1,49 @@
 import _sequelize from 'sequelize';
 const { Model, Sequelize } = _sequelize;
 
-export default class Seat extends Model {
+export default class section extends Model {
   static init(sequelize, DataTypes) {
   return super.init({
-    idSeat: {
+    section_id: {
       autoIncrement: true,
       autoIncrementIdentity: true,
       type: DataTypes.INTEGER,
       allowNull: false,
       primaryKey: true
     },
-    seatNo: {
+    section_name: {
       type: DataTypes.STRING(100),
       allowNull: false
     },
-    rowNo: {
-      type: DataTypes.STRING(100),
-      allowNull: false
-    },
-    section: {
-      type: DataTypes.STRING(100),
-      allowNull: false
-    },
-    idEvent: {
+    event_location_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'Event',
-        key: 'idEvent'
-      }
-    },
-    idEventLocation: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: 'EventLocation',
-        key: 'idEventLocation'
+        model: 'event_location',
+        key: 'event_location_id'
       }
     }
   }, {
     sequelize,
-    tableName: 'Seat',
+    tableName: 'section',
     schema: 'public',
-    timestamps: false,
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    underscored: true,
+    freezeTableName: true,
     indexes: [
       {
-        name: "Seat_pkey",
+        name: "idx_section_event_location_id",
+        fields: [
+          { name: "event_location_id" },
+        ]
+      },
+      {
+        name: "section_pkey",
         unique: true,
         fields: [
-          { name: "idSeat" },
+          { name: "section_id" },
         ]
       },
     ]
