@@ -1,0 +1,128 @@
+get:
+  tags: [Company]
+  operationId: listCompanyEvents
+  summary: Lista eventos por company_id
+  description: Devuelve eventos filtrados por compañía con paginación y filtros opcionales.
+  parameters:
+    - in: path
+      name: companyId
+      required: true
+      description: Identificador de la compañía
+      schema:
+        type: integer
+        minimum: 1
+    - in: query
+      name: limit
+      required: false
+      schema: { type: integer, minimum: 1, maximum: 500, default: 50 }
+    - in: query
+      name: offset
+      required: false
+      schema: { type: integer, minimum: 0, default: 0 }
+    - in: query
+      name: dateFrom
+      required: false
+      description: Fecha mínima (YYYY-MM-DD)
+      schema: { type: string, format: date }
+    - in: query
+      name: dateTo
+      required: false
+      description: Fecha máxima (YYYY-MM-DD)
+      schema: { type: string, format: date }
+    - in: query
+      name: category
+      required: false
+      description: Puede repetirse para múltiples valores (?category=A&category=B)
+      schema:
+        type: array
+        items: { type: string }
+      style: form
+      explode: true
+    - in: query
+      name: full
+      required: false
+      description: Si es true, incluye asociaciones (company, location, tickets)
+      schema: { type: boolean, default: false }
+    - in: query
+      name: orderBy
+      required: false
+      schema:
+        type: string
+        enum: [event_date, start_time, created_at]
+        default: event_date
+    - in: query
+      name: orderDir
+      required: false
+      schema:
+        type: string
+        enum: [ASC, DESC]
+        default: ASC
+  responses:
+    "200":
+      description: Lista de eventos
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/event.yaml#/EventListResponse"
+          examples:
+            soloCompany:
+              value:
+                count: 2
+                rows:
+                  - event_id: 101
+                    event_name: "Annual Dev Conference"
+                    category: "Conference"
+                    description: "Tech talks and workshops"
+                    event_date: "2025-03-10"
+                    start_time: "09:00:00"
+                    end_time: "17:00:00"
+                    company_id: 7
+                    event_location_id: 3
+                    created_at: "2025-01-15T10:12:00.000Z"
+                    updated_at: "2025-01-15T10:12:00.000Z"
+                  - event_id: 135
+                    event_name: "Monthly Meetup"
+                    category: "Meetup"
+                    description: "Community networking"
+                    event_date: "2025-06-05"
+                    start_time: "18:30:00"
+                    end_time: "20:30:00"
+                    company_id: 7
+                    event_location_id: 5
+                    created_at: "2025-02-01T09:00:00.000Z"
+                    updated_at: "2025-02-01T09:00:00.000Z"
+            conFechas:
+              value:
+                count: 1
+                rows:
+                  - event_id: 101
+                    event_name: "Annual Dev Conference"
+                    category: "Conference"
+                    description: "Tech talks and workshops"
+                    event_date: "2025-03-10"
+                    start_time: "09:00:00"
+                    end_time: "17:00:00"
+                    company_id: 7
+                    event_location_id: 3
+                    created_at: "2025-01-15T10:12:00.000Z"
+                    updated_at: "2025-01-15T10:12:00.000Z"
+    "400":
+      description: Error de validación (params/query inválidos)
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            rangoFechas:
+              value: { message: "dateFrom must be <= dateTo." }
+    "404":
+      description: Compañía no encontrada
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            notFound:
+              value: { message: "Company not found" }
+  security:
+    - bearerAuth: []

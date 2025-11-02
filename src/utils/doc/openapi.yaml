@@ -9,8 +9,6 @@ info:
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 
 servers:
-  - url: https://dominio.com
-    description: Producción
   - url: http://localhost:6970
     description: Desarrollo
 
@@ -20,7 +18,12 @@ security:
 paths:
   /v1/login:
     $ref: "./paths/auth-login.yaml"
-
+  /v1/company/:companyId/events:
+    $ref: "./paths/company-events.yaml"
+  /v1/events/new:
+    $ref: "./paths/events-create.yaml"
+  /v1/events/events/search:
+    $ref: "./paths/events-search.yaml"
 components:
   securitySchemes:
     bearerAuth:
@@ -34,3 +37,6 @@ components:
       $ref: "./schemas/auth.yaml#/LoginResponse"
     Error:
       $ref: "./schemas/common.yaml#/Error"
+    Event: { $ref: "./schemas/event.yaml#/Event" }
+    EventCreateRequest: { $ref: "./schemas/event.yaml#/EventCreateRequest" }
+    EventListResponse: { $ref: "./schemas/event.yaml#/EventListResponse" }

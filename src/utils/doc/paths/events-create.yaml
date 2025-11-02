@@ -1,0 +1,61 @@
+post:
+  tags: [Events]
+  operationId: createEvent
+  summary: Crea un evento
+  description: Crea un evento para una compañía determinada.
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "../schemas/event.yaml#/EventCreateRequest"
+        examples:
+          correcto:
+            value:
+              event_name: "Monthly Meetup"
+              category: "Meetup"
+              description: "Community networking"
+              event_date: "2025-06-05"
+              start_time: "18:30:00"
+              end_time: "20:30:00"
+              company_id: 7
+              event_location_id: 5
+          sinEndTime:
+            value:
+              event_name: "Standup"
+              category: "Internal"
+              description: "Daily standup"
+              event_date: "2025-02-10"
+              start_time: "09:00:00"
+              end_time: null
+              company_id: 7
+              event_location_id: 2
+  responses:
+    "201":
+      description: Evento creado
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              event_id: { type: integer, example: 135 }
+    "400":
+      description: Error de validación (body inválido)
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            horaInvalida:
+              value: { message: "end_time must be greater than start_time." }
+    "409":
+      description: Conflicto (duplicado/reglas de negocio)
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            conflicto:
+              value: { message: "Event already exists for given date/time." }
+  security:
+    - bearerAuth: []

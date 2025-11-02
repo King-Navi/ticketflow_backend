@@ -29,3 +29,33 @@ export function validateBody(schema) {
   };
 }
 
+function validate(schema, source = "body") {
+  return function (req, res, next) {
+    const { value, error } = schema.validate(req[source], {
+      abortEarly: false,
+      convert: true,
+    });
+
+    if (error) {
+      return res.status(400).json({
+        message: "Validation error",
+        details: error.details.map(d => ({ message: d.message, path: d.path })),
+      });
+    }
+
+    if (source === "query" || source === "params") {
+      Object.assign(req[source], value);
+    } else {
+      req[source] = value;
+    }
+    next();
+  };
+}
+
+export function validateParams(schema) {
+  return validate(schema, "params");
+}
+
+export function validateQuery(schema) {
+  return validate(schema, "query");
+}

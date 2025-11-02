@@ -1,0 +1,49 @@
+Event:
+  type: object
+  properties:
+    event_id: { type: integer }
+    event_name: { type: string, maxLength: 200 }
+    category: { type: string, maxLength: 100 }
+    description: { type: string }
+    event_date: { type: string, format: date }
+    start_time: { type: string, pattern: "^(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d$" }
+    end_time:
+      anyOf:
+        - { type: "null" }
+        - { type: string, pattern: "^(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d$" }
+    company_id: { type: integer }
+    event_location_id: { type: integer }
+    created_at: { type: string, format: date-time }
+    updated_at: { type: string, format: date-time }
+
+EventCreateRequest:
+  type: object
+  required:
+    - event_name
+    - category
+    - description
+    - event_date
+    - start_time
+    - company_id
+    - event_location_id
+  properties:
+    event_name: { type: string, maxLength: 200 }
+    category: { type: string, maxLength: 100 }
+    description: { type: string }
+    event_date: { type: string, format: date }
+    start_time: { type: string, pattern: "^(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d$" }
+    end_time:
+      anyOf:
+        - { type: "null" }
+        - { type: string, pattern: "^(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d$" }
+    company_id: { type: integer, minimum: 1 }
+    event_location_id: { type: integer, minimum: 1 }
+
+EventListResponse:
+  type: object
+  properties:
+    count: { type: integer, minimum: 0 }
+    rows:
+      type: array
+      items:
+        $ref: "#/Event"

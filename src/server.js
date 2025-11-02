@@ -5,6 +5,7 @@ import http from 'http'
 import express from 'express';
 import { errorHandler } from './utils/errors/handler.js';
 import authRoute from './routes/auth.route.js'
+import companyRoute from './routes/company.route.js'
 import eventRoute from './routes/event.route.js'
 import locationRoute from './routes/locations.route.js'
 import loginRoute from './routes/login.route.js'
@@ -35,6 +36,7 @@ app.use(express.urlencoded({ extended: true }));
 
 
 app.use(authRoute);
+app.use(companyRoute);
 app.use(eventRoute);
 app.use(locationRoute);
 app.use(loginRoute);

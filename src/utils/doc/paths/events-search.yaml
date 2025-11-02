@@ -1,0 +1,144 @@
+get:
+  tags: [Events]
+  operationId: searchEvents
+  summary: Busca eventos por NOMBRE, FECHA o CATEGORÍA (exactamente uno)
+  description: >
+    Búsqueda global de eventos filtrando por **un solo** criterio:
+    `name` (coincidencia parcial, case-insensitive), `date` (YYYY-MM-DD) **o**
+    `category` (coincidencia exacta). Si se envían varios o ninguno, retorna 400.
+  parameters:
+    - in: query
+      name: name
+      description: Substring del nombre del evento (case-insensitive). No combinar con `date` ni `category`.
+      required: false
+      schema: { type: string, maxLength: 200 }
+      examples:
+        parcial:
+          value: "meetup"
+        exacto:
+          value: "Annual Dev Conference"
+    - in: query
+      name: date
+      description: Fecha exacta del evento (YYYY-MM-DD). No combinar con `name` ni `category`.
+      required: false
+      schema: { type: string, format: date }
+      examples:
+        ejemplo:
+          value: "2025-03-10"
+    - in: query
+      name: category
+      description: Categoría exacta del evento. No combinar con `name` ni `date`.
+      required: false
+      schema: { type: string, maxLength: 100 }
+      examples:
+        ejemplo:
+          value: "Technology"
+
+    - in: query
+      name: limit
+      required: false
+      schema: { type: integer, minimum: 1, maximum: 500, default: 50 }
+    - in: query
+      name: offset
+      required: false
+      schema: { type: integer, minimum: 0, default: 0 }
+    - in: query
+      name: orderBy
+      required: false
+      schema:
+        type: string
+        enum: [event_date, start_time, created_at]
+        default: event_date
+    - in: query
+      name: orderDir
+      required: false
+      schema:
+        type: string
+        enum: [ASC, DESC]
+        default: ASC
+    - in: query
+      name: full
+      required: false
+      description: Si es true, incluye asociaciones (company, location, tickets) si el backend lo soporta.
+      schema: { type: boolean, default: false }
+
+  responses:
+    "200":
+      description: Resultados de la búsqueda
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/event.yaml#/EventListResponse"
+          examples:
+            porNombre:
+              summary: Búsqueda por name
+              value:
+                count: 2
+                rows:
+                  - event_id: 135
+                    event_name: "Monthly Meetup"
+                    category: "Meetup"
+                    description: "Community networking"
+                    event_date: "2025-06-05"
+                    start_time: "18:30:00"
+                    end_time: "20:30:00"
+                    company_id: 7
+                    event_location_id: 5
+                    created_at: "2025-02-01T09:00:00.000Z"
+                    updated_at: "2025-02-01T09:00:00.000Z"
+                  - event_id: 101
+                    event_name: "Annual Dev Conference"
+                    category: "Conference"
+                    description: "Tech talks and workshops"
+                    event_date: "2025-03-10"
+                    start_time: "09:00:00"
+                    end_time: "17:00:00"
+                    company_id: 7
+                    event_location_id: 3
+                    created_at: "2025-01-15T10:12:00.000Z"
+                    updated_at: "2025-01-15T10:12:00.000Z"
+            porFecha:
+              summary: Búsqueda por date
+              value:
+                count: 1
+                rows:
+                  - event_id: 101
+                    event_name: "Annual Dev Conference"
+                    category: "Conference"
+                    description: "Tech talks and workshops"
+                    event_date: "2025-03-10"
+                    start_time: "09:00:00"
+                    end_time: "17:00:00"
+                    company_id: 7
+                    event_location_id: 3
+                    created_at: "2025-01-15T10:12:00.000Z"
+                    updated_at: "2025-01-15T10:12:00.000Z"
+            porCategoria:
+              summary: Búsqueda por category
+              value:
+                count: 1
+                rows:
+                  - event_id: 222
+                    event_name: "Frontend Meetup"
+                    category: "Meetup"
+                    description: "Next.js + Tailwind tips"
+                    event_date: "2025-09-20"
+                    start_time: "19:00:00"
+                    end_time: "21:00:00"
+                    company_id: 4
+                    event_location_id: 9
+                    created_at: "2025-08-01T12:00:00.000Z"
+                    updated_at: "2025-08-01T12:00:00.000Z"
+    "400":
+      description: Error de validación (regla de un filtro o formato inválido)
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            xor:
+              value: { message: "Exactly one of 'name', 'date' or 'category' must be provided." }
+            fecha:
+              value: { message: "date must be an ISO date or 'YYYY-MM-DD'." }
+  security:
+    - bearerAuth: []

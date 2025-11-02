@@ -88,3 +88,45 @@ export async function newEventService(payload, organizerCredentialId) {
   });
   return event_id;
 }
+
+export async function recoverEventService() {
+  
+}
+
+export async function editEventService() {
+  
+}
+export async function deleteEventService() {
+  
+}
+
+export async function searchCompanyEventsService({ name, date, category, ...rest } = {}) {
+  const provided = [!!(name?.trim?.()), !!(date?.toString?.()), !!(category?.trim?.())].filter(Boolean).length;
+  if (provided !== 1) {
+    throw new Error("Exactly one of 'name', 'date' or 'category' must be provided.");
+  }
+
+  const opts = normalizeOptions(rest);
+  return eventRepo.searchOneFilter({ name, date, category, ...opts });
+}
+
+function normalizeOptions(opts = {}) {
+  const {
+    limit = 50,
+    offset = 0,
+    orderBy = "event_date",
+    orderDir = "ASC",
+    include
+  } = opts;
+
+  const dir = String(orderDir).toUpperCase() === "DESC" ? "DESC" : "ASC";
+  const order = [[String(orderBy), dir]];
+  if (String(orderBy) !== "start_time") order.push(["start_time", "ASC"]);
+
+  return {
+    limit: Number(limit),
+    offset: Number(offset),
+    order,
+    include
+  };
+}
