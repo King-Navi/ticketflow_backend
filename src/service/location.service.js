@@ -204,3 +204,73 @@ export async function newSeatsBulkService(section_id, seats) {
 export async function listAllLocationsService({ limit, offset } = {}) {
   return eventLocationRepo.findAllLocations({ limit, offset });
 }
+
+
+/**
+ * Recover full venue layout:
+ * event_location -> sections -> seats
+ *
+ * Este service resuelve el problema 1
+ * y respeta SRP en cada repositorio.
+ *
+ * @param {number|string} eventLocationId
+ * @returns {Promise<object>}
+ */
+export async function recoverEventLocationLayoutService(eventLocationId) {
+  const locationRepo = new EventLocationRepository();
+  const sectionRepo = new SectionRepository();
+  const seatRepo = new SeatRepository();
+
+  const id = Number(eventLocationId);
+  if (Number.isNaN(id)) {
+    throw new Error("Invalid eventLocationId.");
+  }
+
+  const loc = await locationRepo.findByEventLocationId(id);
+  if (!loc) {
+    throw new Error("Event location not found.");
+  }
+
+  const sectionsRaw = await sectionRepo.findAllByEventLocationId(id);
+
+  const sections = [];
+  for (const sec of sectionsRaw) {
+    const seatsRaw = await seatRepo.findAllBySectionId(sec.section_id);
+
+    const seats = seatsRaw.map((seat) => ({
+      seat_id: seat.seat_id,
+      row_no: seat.row_no,
+      seat_no: seat.seat_no,
+      display_label: `${seat.row_no}-${seat.seat_no}`,
+      created_at: seat.created_at,
+      updated_at: seat.updated_at,
+    }));
+
+    sections.push({
+      section_id: sec.section_id,
+      section_name: sec.section_name,
+      seats,
+      created_at: sec.created_at,
+      updated_at: sec.updated_at,
+    });
+  }
+
+  return {
+    event_location_id: loc.event_location_id,
+    venue_name: loc.venue_name,
+    address: {
+      address_line1: loc.address_line1,
+      address_line2: loc.address_line2,
+      city: loc.city,
+      state: loc.state,
+      country: loc.country,
+      postal_code: loc.postal_code,
+    },
+    capacity: loc.capacity,
+    sections,
+    metadata: {
+      created_at: loc.created_at,
+      updated_at: loc.updated_at,
+    },
+  };
+}

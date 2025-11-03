@@ -47,4 +47,32 @@ export default class SectionRepository {
       throw error;
     }
   }
+  /**
+   * Get sections for a given event_location_id
+   * @param {number} eventLocationId
+   * @returns {Promise<Array>}
+   */
+  async findAllByEventLocationId(eventLocationId) {
+    try {
+      return await this.model.findAll({
+        where: { event_location_id: eventLocationId },
+        attributes: [
+          "section_id",
+          "section_name",
+          "event_location_id",
+          "created_at",
+          "updated_at",
+        ],
+        order: [["section_name", "ASC"]],
+      });
+    } catch (error) {
+      if (error instanceof Sequelize.ConnectionError) {
+        throw new Error("Cannot connect to the database.");
+      }
+      if (error instanceof Sequelize.DatabaseError) {
+        throw new Error("Database error occurred.");
+      }
+      throw error;
+    }
+  }
 }

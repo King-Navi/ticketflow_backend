@@ -1,0 +1,136 @@
+AllowedEventSeatStatuses:
+  type: array
+  readOnly: true
+  items:
+    type: string
+    enum: [available, reserved, blocked, sold]
+
+EventWithInventoryCreateRequest:
+  type: object
+  additionalProperties: false
+  required: [event, inventory]
+  properties:
+    event:
+      $ref: "#/EventPayload"
+    inventory:
+      type: array
+      minItems: 1
+      items:
+        $ref: "#/InventoryItem"
+
+EventPayload:
+  type: object
+  additionalProperties: false
+  required:
+    - event_name
+    - category
+    - description
+    - event_date
+    - start_time
+    - company_id
+    - event_location_id
+  properties:
+    event_name:
+      type: string
+      minLength: 1
+      maxLength: 150
+    category:
+      type: string
+      minLength: 1
+      maxLength: 100
+    description:
+      type: string
+      minLength: 1
+      maxLength: 500
+    event_date:
+      type: string
+      description: "Date in YYYY-MM-DD format."
+      pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+      examples: ["2025-12-05"]
+    start_time:
+      type: string
+      description: "Time in HH:mm:ss (24h)."
+      pattern: "^(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d$"
+      examples: ["20:00:00"]
+    end_time:
+      type: [string, "null"]
+      nullable: true
+      description: "Time in HH:mm:ss (24h). Must be greater than start_time when provided."
+      pattern: "^(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d$"
+      examples: ["23:30:00", null]
+    company_id:
+      type: integer
+      minimum: 1
+    event_location_id:
+      type: integer
+      minimum: 1
+
+InventoryItem:
+  type: object
+  additionalProperties: false
+  required: [seat_id, base_price]
+  properties:
+    seat_id:
+      type: integer
+      minimum: 1
+    base_price:
+      type: number
+      minimum: 0
+      multipleOf: 0.01
+    status:
+      type: string
+      enum: [available, reserved, blocked, sold]
+      default: available
+    category_label:
+      type: string
+      minLength: 1
+      maxLength: 100
+
+EventWithInventoryCreateResponse:
+  type: object
+  additionalProperties: false
+  required: [event_id, event_location_id, inventory_created, counts]
+  properties:
+    event_id:
+      type: integer
+      minimum: 1
+    event_location_id:
+      type: integer
+      minimum: 1
+    inventory_created:
+      type: array
+      items:
+        $ref: "#/InventoryCreatedItem"
+    counts:
+      $ref: "#/Counts"
+
+InventoryCreatedItem:
+  type: object
+  additionalProperties: false
+  required: [event_seat_id, seat_id, base_price, status]
+  properties:
+    event_seat_id:
+      type: integer
+      minimum: 1
+    seat_id:
+      type: integer
+      minimum: 1
+    base_price:
+      type: number
+      minimum: 0
+      multipleOf: 0.01
+    status:
+      type: string
+      enum: [available, reserved, blocked, sold]
+
+Counts:
+  type: object
+  additionalProperties: false
+  required: [requested, created]
+  properties:
+    requested:
+      type: integer
+      minimum: 0
+    created:
+      type: integer
+      minimum: 0

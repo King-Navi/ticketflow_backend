@@ -101,7 +101,6 @@ export async function searchCompanyEventsController(req, res) {
         });
         return res.json({ count, rows });
     } catch (err) {
-        console.log(err)
     }
     return res.status(500).json({ message: "Error" });
 }

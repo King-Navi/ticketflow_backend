@@ -1,0 +1,90 @@
+get:
+  tags: [EventLocation]
+  operationId: getEventLocationLayout
+  summary: Get full event location layout (sections and seats)
+  description: >
+    Returns the complete physical layout of a specific event location (venue),
+    including its sections and the seats in each section. This is typically
+    used by organizers when configuring an event's seat inventory, and by
+    frontends that need to display the venue map.
+
+  parameters:
+    - name: eventLocationId
+      in: path
+      required: true
+      description: Numeric identifier of the event_location.
+      schema:
+        type: integer
+        minimum: 1
+      example: 42
+
+  responses:
+    "200":
+      description: Successful lookup of the event location layout.
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/eventLocation.layout.yaml#/EventLocationFullLayoutResponse"
+          examples:
+            example:
+              value:
+                event_location_id: 42
+                venue_name: "Grand Arena"
+                address:
+                  address_line1: "Av. Central 123"
+                  address_line2: "Piso 2"
+                  city: "Ciudad de México"
+                  state: "CDMX"
+                  country: "México"
+                  postal_code: "01000"
+                capacity: 1200
+                sections:
+                  - section_id: 10
+                    section_name: "VIP"
+                    seats:
+                      - seat_id: 501
+                        row_no: "A"
+                        seat_no: "1"
+                        display_label: "A-1"
+                        created_at: "2025-10-20T18:32:11Z"
+                        updated_at: "2025-10-28T09:12:44Z"
+                    created_at: "2025-10-20T18:32:11Z"
+                    updated_at: "2025-10-28T09:12:44Z"
+                metadata:
+                  created_at: "2025-10-20T18:32:11Z"
+                  updated_at: "2025-10-28T09:12:44Z"
+
+    "400":
+      description: Invalid path parameter (for example, non-numeric or <=0).
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            invalid_param:
+              value:
+                msg: "Invalid path params."
+                details:
+                  - "\"eventLocationId\" must be a positive number"
+
+    "404":
+      description: The given event_location_id does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            not_found:
+              value:
+                msg: "Event location not found."
+
+    "500":
+      description: Unexpected server error.
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            server_error:
+              value:
+                msg: "Error"

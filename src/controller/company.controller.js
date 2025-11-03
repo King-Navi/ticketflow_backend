@@ -13,7 +13,6 @@ export async function recoverEventsController(req, res) {
 
         return res.json({ count, rows });
     } catch (error) {
-        console.log(error)
     }
     return res.status(500).json({ msg: "error" });
 }

@@ -26,8 +26,12 @@ paths:
     $ref: "./paths/events-search.yaml"
   /v1/events/edit/:eventId:
     $ref: "./paths/events-edit.yaml"
+  /v1/eventseats/with-event:
+    $ref: "./paths/eventseats-with-event.yaml"
   /v1/location/search/all:
     $ref: "./paths/location-search-all.yaml"
+  /v1/location/:eventLocationId/layout:
+    $ref: "./paths/location-layout.yaml"
   /v1/organizer/edit:
     $ref: "./paths/organizer-update.yaml"
   
@@ -51,3 +55,23 @@ components:
       $ref: "./schemas/eventLocation.yaml#/EventLocation"
     UpdateOrganizerRequest: { $ref: "./schemas/organizer.yaml#/UpdateOrganizerRequest" }
     UpdateOrganizerResponse: { $ref: "./schemas/organizer.yaml#/UpdateOrganizerResponse" }
+    EventLocationFullLayoutResponse:
+      $ref: "./schemas/eventLocation.layout.yaml#/EventLocationFullLayoutResponse"
+    EventLocationAddress:
+      $ref: "./schemas/eventLocation.layout.yaml#/EventLocationAddress"
+    EventLocationSection:
+      $ref: "./schemas/eventLocation.layout.yaml#/EventLocationSection"
+    EventLocationSeat:
+      $ref: "./schemas/eventLocation.layout.yaml#/EventLocationSeat"
+    EventWithInventoryCreateRequest:
+      $ref: "./schemas/eventseats.yaml#/EventWithInventoryCreateRequest"
+    EventWithInventoryCreateResponse:
+      $ref: "./schemas/eventseats.yaml#/EventWithInventoryCreateResponse"
+    EventPayload:
+      $ref: "./schemas/eventseats.yaml#/EventPayload"
+    InventoryItem:
+      $ref: "./schemas/eventseats.yaml#/InventoryItem"
+    InventoryCreatedItem:
+      $ref: "./schemas/eventseats.yaml#/InventoryCreatedItem"
+    Counts:
+      $ref: "./schemas/eventseats.yaml#/Counts"

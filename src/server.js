@@ -8,6 +8,7 @@ import authRoute from './routes/auth.route.js'
 import companyRoute from './routes/company.route.js'
 import eventRoute from './routes/event.route.js'
 import eventLocationRoute from './routes/eventLocation.route.js'
+import eventSeatRoute from './routes/eventSeat.route.js'
 import locationRoute from './routes/locations.route.js'
 import loginRoute from './routes/login.route.js'
 import organizerRoute from './routes/organizer.route.js'
@@ -41,6 +42,7 @@ app.use(authRoute);
 app.use(companyRoute);
 app.use(eventRoute);
 app.use(eventLocationRoute);
+app.use(eventSeatRoute);
 app.use(locationRoute);
 app.use(loginRoute);
 app.use(organizerRoute);
@@ -61,7 +63,7 @@ app.use(errorHandler);
 async function start() {
   try {
     await initDatabase();
-
+    //TODO: https
     http.createServer(app).listen(httpPort, () => {
       console.log(`Server running on http://localhost:${httpPort}`);
     });

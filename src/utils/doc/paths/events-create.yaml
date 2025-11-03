@@ -1,4 +1,4 @@
-post:
+put:
   tags: [Event]
   operationId: createEvent
   summary: Crea un evento

@@ -1,0 +1,162 @@
+EventLocationFullLayoutResponse:
+  type: object
+  additionalProperties: false
+  required:
+    - event_location_id
+    - venue_name
+    - address
+    - capacity
+    - sections
+    - metadata
+  properties:
+    event_location_id:
+      type: integer
+      description: Unique identifier of the event_location.
+      examples: [42]
+
+    venue_name:
+      type: string
+      description: Human-readable venue name.
+      examples: ["Grand Arena"]
+
+    address:
+      $ref: "#/EventLocationAddress"
+
+    capacity:
+      type: integer
+      nullable: true
+      description: >
+        Declared capacity of the venue. May include non-seated capacity
+        (e.g. standing/general admission) and may not equal the count
+        of physical seats.
+      examples: [1200, null]
+
+    sections:
+      type: array
+      description: List of logical sections/zones in the venue.
+      items:
+        $ref: "#/EventLocationSection"
+
+    metadata:
+      type: object
+      additionalProperties: false
+      required: [created_at, updated_at]
+      properties:
+        created_at:
+          type: string
+          format: date-time
+          description: When this event_location row was first created.
+          examples: ["2025-10-20T18:32:11Z"]
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp of this event_location row.
+          examples: ["2025-10-28T09:12:44Z"]
+
+EventLocationAddress:
+  type: object
+  additionalProperties: false
+  required:
+    - address_line1
+    - city
+    - country
+  properties:
+    address_line1:
+      type: string
+      description: Primary address line.
+      examples: ["Av. Central 123"]
+    address_line2:
+      type: string
+      nullable: true
+      description: Secondary address line (suite, floor, etc.).
+      examples: ["Piso 2", null]
+    city:
+      type: string
+      description: City / municipality.
+      examples: ["Ciudad de México"]
+    state:
+      type: string
+      nullable: true
+      description: State / province / region.
+      examples: ["CDMX", null]
+    country:
+      type: string
+      description: Country.
+      examples: ["México"]
+    postal_code:
+      type: string
+      nullable: true
+      description: Postal / ZIP code.
+      examples: ["01000", null]
+
+EventLocationSection:
+  type: object
+  additionalProperties: false
+  required:
+    - section_id
+    - section_name
+    - seats
+    - created_at
+    - updated_at
+  properties:
+    section_id:
+      type: integer
+      description: Unique identifier for the section.
+      examples: [10]
+    section_name:
+      type: string
+      description: Logical name of the section (e.g. "VIP", "Balcony A").
+      examples: ["VIP", "General Floor"]
+    seats:
+      type: array
+      description: Physical seats that belong to this section.
+      items:
+        $ref: "#/EventLocationSeat"
+    created_at:
+      type: string
+      format: date-time
+      description: Timestamp when this section row was created.
+      examples: ["2025-10-20T18:32:11Z"]
+    updated_at:
+      type: string
+      format: date-time
+      description: Timestamp when this section row was last updated.
+      examples: ["2025-10-28T09:12:44Z"]
+
+EventLocationSeat:
+  type: object
+  additionalProperties: false
+  required:
+    - seat_id
+    - row_no
+    - seat_no
+    - display_label
+    - created_at
+    - updated_at
+  properties:
+    seat_id:
+      type: integer
+      description: Unique identifier for this physical seat.
+      examples: [501]
+    row_no:
+      type: string
+      description: The row label in the section (e.g. "A", "GA").
+      examples: ["A", "GA"]
+    seat_no:
+      type: string
+      description: Seat number within the row.
+      examples: ["1", "45"]
+    display_label:
+      type: string
+      description: Concatenated label for UI (row_no-seat_no).
+      examples: ["A-1", "GA-45"]
+    created_at:
+      type: string
+      format: date-time
+      description: Timestamp when this seat row was created.
+      examples: ["2025-10-20T18:32:11Z"]
+    updated_at:
+      type: string
+      format: date-time
+      description: Timestamp when this seat row was last updated.
+      examples: ["2025-10-28T09:12:44Z"]

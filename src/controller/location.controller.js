@@ -3,6 +3,8 @@ import {
     newSectionService,
     newSeatService,
     newSeatsBulkService,
+    listAllLocationsService,
+    recoverEventLocationLayoutService
 } from "../service/location.service.js";
 
 import {
@@ -42,7 +44,6 @@ export async function createSectionController(req, res) {
         const result = await newSectionService(value);
         return res.status(201).json(result); // { section_id }
     } catch (err) {
-        console.log(err)
     }
     return res.status(500).json({ msg: "Error" });
 
@@ -80,4 +81,38 @@ export async function bulkCreateSeatsController(req, res) {
     }
     return res.status(500).json({ msg: "Error" });
 
+}
+
+export async function listAllLocationsController(req, res, next) {
+  try {
+    const { limit, offset } = req.query;
+    const result = await listAllLocationsService({
+      limit: limit ?? 50,
+      offset: offset ?? 0,
+    });
+
+    return res.json(result);
+  } catch (err) {
+    return next(err);
+  }
+}
+
+export async function getEventLocationLayoutController(req, res) {
+    try {
+        const { eventLocationId } = req.params;
+
+        const payload = await recoverEventLocationLayoutService(eventLocationId);
+
+        return res.status(200).json(payload);
+    } catch (err) {
+        if (err && err.message === "Invalid eventLocationId.") {
+            return res.status(400).json({ msg: err.message });
+        }
+
+        if (err && err.message === "Event location not found.") {
+            return res.status(404).json({ msg: err.message });
+        }
+    }
+
+    return res.status(500).json({ msg: "Error" });
 }
