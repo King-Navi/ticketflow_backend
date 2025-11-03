@@ -24,7 +24,6 @@ export async function recoverEmailController(req, res) {
         let result = await recoverEmailService(data);
         return res.status(201).json({ message: result });
     } catch (error) {
-        console.error(error)
         return res.status(error.code).json({
             message: "OK"
         });
@@ -39,7 +38,6 @@ export async function sendRecoverCodeToEmailController(req, res) {
             message: "Code send"
         });
     } catch (error) {
-        console.error(error)
     }
     return res.status(400).json({
         message: "OK"
