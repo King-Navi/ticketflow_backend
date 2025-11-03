@@ -1,0 +1,65 @@
+UpdateOrganizerRequest:
+  type: object
+  description: >
+    Al menos uno de los campos debe enviarse. `middle_name` y `company_id` aceptan null.
+  properties:
+    first_name:
+      type: string
+      minLength: 1
+      maxLength: 100
+    last_name:
+      type: string
+      minLength: 1
+      maxLength: 100
+    middle_name:
+      anyOf:
+        - type: "string"
+          minLength: 1
+          maxLength: 100
+        - type: "null"
+    company_id:
+      anyOf:
+        - type: "integer"
+          minimum: 1
+        - type: "null"
+  example:
+    first_name: "Ana"
+    last_name: "Torres"
+    middle_name: null
+    company_id: 12
+
+UpdateOrganizerResponse:
+  type: object
+  properties:
+    message:
+      type: string
+      example: "Organizer profile updated successfully."
+    organizer:
+      type: object
+      properties:
+        organizer_id:
+          type: integer
+          example: 42
+        first_name:
+          type: string
+          example: "Ana"
+        last_name:
+          type: string
+          example: "Torres"
+        middle_name:
+          type: ["string", "null"]
+          example: null
+        company_id:
+          type: ["integer", "null"]
+          example: 12
+        credential_id:
+          type: integer
+          example: 99
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-02-10T10:15:00.000Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-11-02T18:40:00.000Z"

@@ -1,0 +1,91 @@
+patch:
+  tags: [Organizer]
+  operationId: updateOrganizerProfile
+  summary: Actualiza el perfil del organizer autenticado
+  description: >
+    Permite que el organizer autenticado actualice su información personal.
+    Se pueden enviar uno o varios campos. Al menos uno es obligatorio.
+    - `first_name`: Nombre
+    - `last_name`: Apellido
+    - `middle_name`: Segundo nombre (puede ser null para eliminarlo)
+    - `company_id`: ID de la empresa asociada (puede ser null para desvincularlo)
+
+    Reglas de negocio:
+    - Solo el propio organizer puede editar su perfil (se toma del token JWT).
+    - Si se intenta cambiar `company_id`, la compañía debe existir.
+    - `company_id: null` elimina la asociación con la empresa.
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "../schemas/organizer.yaml#/UpdateOrganizerRequest"
+        examples:
+          cambiarNombre:
+            summary: Cambiar first_name únicamente
+            value:
+              first_name: "Carlos"
+          cambiarNombreApellido:
+            summary: Cambiar first_name y last_name
+            value:
+              first_name: "Ana"
+              last_name: "Torres"
+          limpiarMiddleName:
+            summary: Eliminar middle_name (ponerlo en null)
+            value:
+              middle_name: null
+          asignarEmpresa:
+            summary: Asociar a una empresa
+            value:
+              company_id: 12
+          quitarEmpresa:
+            summary: Desvincular de la empresa actual
+            value:
+              company_id: null
+
+  responses:
+    "200":
+      description: Perfil actualizado correctamente
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/organizer.yaml#/UpdateOrganizerResponse"
+          examples:
+            success:
+              value:
+                message: "Organizer profile updated successfully."
+                organizer:
+                  organizer_id: 42
+                  first_name: "Ana"
+                  last_name: "Torres"
+                  middle_name: null
+                  company_id: 12
+                  credential_id: 99
+                  created_at: "2025-02-10T10:15:00.000Z"
+                  updated_at: "2025-11-02T18:40:00.000Z"
+
+  "400":
+    description: Error de validación en el body (por ejemplo body vacío o valores inválidos)
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Validation error
+            details:
+              type: array
+              description: Lista de errores de validación
+              items:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: first_name is required
+                  path:
+                    type: array
+                    items:
+                      type: string
+          required:
+            - message

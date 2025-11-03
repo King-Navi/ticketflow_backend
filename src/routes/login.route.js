@@ -11,7 +11,8 @@ const LOGIN_ROUTE = "/v1/login";
 
 router.post(`${LOGIN_ROUTE}`,
     validateBody(loginSchema), 
-    loginController);
+    loginController
+);
 
 
 

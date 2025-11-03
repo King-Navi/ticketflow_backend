@@ -199,3 +199,8 @@ export async function newSeatsBulkService(section_id, seats) {
   const createdCount = await seatRepo.bulkCreateSeats(items);
   return { created: createdCount };
 }
+
+
+export async function listAllLocationsService({ limit, offset } = {}) {
+  return eventLocationRepo.findAllLocations({ limit, offset });
+}

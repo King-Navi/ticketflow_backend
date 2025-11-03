@@ -1,5 +1,5 @@
 get:
-  tags: [Events]
+  tags: [Event]
   operationId: searchEvents
   summary: Busca eventos por NOMBRE, FECHA o CATEGORÍA (exactamente uno)
   description: >

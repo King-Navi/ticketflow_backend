@@ -20,6 +20,36 @@ export default class EventLocationRepository {
       throw error;
     }
   }
+  /**
+   * Get ALL locations (paginated).
+   *
+   * @param {object} [options]
+   * @param {number} [options.limit=50]
+   * @param {number} [options.offset=0]
+   * @param {Array}  [options.order=[["event_location_id","ASC"]]]
+   * @returns {Promise<{rows: any[], count: number}>}
+   */
+  async findAllLocations({
+    limit = 50,
+    offset = 0,
+    order = [["event_location_id", "ASC"]],
+  } = {}) {
+    try {
+      return await this.model.findAndCountAll({
+        limit,
+        offset,
+        order,
+      });
+    } catch (error) {
+        if (error instanceof Sequelize.ConnectionError) {
+          throw new Error("Cannot connect to the database.");
+        }
+        if (error instanceof Sequelize.DatabaseError) {
+          throw new Error("Database error occurred.");
+        }
+        throw error;
+    }
+  }
 
 
   async search({ city, venueName, limit = 20, offset = 0 } = {}) {
@@ -46,7 +76,7 @@ export default class EventLocationRepository {
   }
 
   /**
-   * Crea un EventLocation.
+   * Create EventLocation.
    * @param {{
    *  venue_name: string,
    *  address_line1: string,
@@ -102,4 +132,7 @@ export default class EventLocationRepository {
       throw error;
     }
   }
+
+
+  
 }

@@ -76,4 +76,79 @@ export default class OrganizerRepository {
       throw error;
     }
   }
+
+
+  /**
+   * Updates organizer profile data (name fields and/or company).
+   *
+   * @param {number} credentialId - The credential_id of the organizer (owner of the profile).
+   * @param {object} data
+   * @param {string} [data.first_name]
+   * @param {string} [data.last_name]
+   * @param {string|null} [data.middle_name]  // can be null to clear it
+   * @param {number|null} [data.company_id]   // can be null to detach from company
+   * @returns {Promise<object>} Plain updated organizer row.
+   *
+   * @throws {Error} If organizer does not exist, company is invalid, or DB error occurs.
+   */
+  async updateOrganizerInfoByCredentialId(credentialId, data = {}) {
+    try {
+      if (!credentialId) throw new Error("credentialId is required.");
+      const organizer = await this.model.findOne({
+        where: { credential_id: credentialId },
+      });
+      if (!organizer) {
+        throw new Error("Organizer not found.");
+      }
+      const updates = {};
+      if (Object.prototype.hasOwnProperty.call(data, "first_name")) {
+        if (!data.first_name) throw new Error("first_name cannot be empty.");
+        updates.first_name = data.first_name;
+      }
+      if (Object.prototype.hasOwnProperty.call(data, "last_name")) {
+        if (!data.last_name) throw new Error("last_name cannot be empty.");
+        updates.last_name = data.last_name;
+      }
+      if (Object.prototype.hasOwnProperty.call(data, "middle_name")) {
+        updates.middle_name = data.middle_name ?? null;
+      }
+      if (Object.prototype.hasOwnProperty.call(data, "company_id")) {
+        if (data.company_id === null) {
+          updates.company_id = null;
+        } else {
+          await this.companyRepo.validateCompanyExists(data.company_id);
+          updates.company_id = data.company_id;
+        }
+      }
+
+      if (Object.keys(updates).length === 0) {
+        return organizer.get({ plain: true });
+      }
+
+      const [count, rows] = await this.model.update(
+        {
+          ...updates,
+          updatedAt: new Date(),
+        },
+        {
+          where: { credential_id: credentialId },
+          returning: true,
+        }
+      );
+
+      if (count === 0) {
+        throw new Error("Organizer not found.");
+      }
+
+      return rows[0].get({ plain: true });
+    } catch (error) {
+      if (error instanceof Sequelize.ConnectionError) {
+        throw new Error("Cannot connect to the database.");
+      }
+      if (error instanceof Sequelize.DatabaseError) {
+        throw new Error("Database error occurred.");
+      }
+      throw error;
+    }
+  }
 }

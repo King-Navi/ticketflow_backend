@@ -20,7 +20,7 @@
     "prepare": "husky",
     "postgre:build": "node src/config/generate.models.js",
     "swagger:docs": "",
-    "docker": "",
+    "docker:build": "docker buildx build --platform linux/amd64,linux/arm64 -t navidocky/ticketflow_backend:latest --push .",
     "redocly:lint": "npx redocly lint src/utils/doc/openapi.yaml",
     "redocly:build": "npx redocly build-docs src/utils/doc/openapi.yaml -o src/utils/doc/docs.html"
   },

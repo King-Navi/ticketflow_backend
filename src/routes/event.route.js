@@ -1,11 +1,12 @@
 import express from 'express'
 import {authRequired, requireRole} from '../middlewares/authVerify.middleware.js'
 import { ROLE } from '../model_db/utils/role.js';
-import { createEventController, searchCompanyEventsController } from '../controller/event.controller.js';
+import { createEventController, searchCompanyEventsController, editEventController } from '../controller/event.controller.js';
 import { validateBody, validateParams, validateQuery } from '../middlewares/validateBody.js';
 import { newEventSchema } from '../middlewares/schemes/newEvent.scheme.js';
 import {searchCompanyEventsQuerySchema} from '../middlewares/schemes/eventSearchSchemas.js';
-import {companyIdParamsSchema} from '../middlewares/schemes/companyIdParam.scheme.js';
+import {editEventBodySchema} from '../middlewares/schemes/editEvent.scheme.js';
+import { validateEventIdParam } from '../middlewares/validateIdParams.middleware.js';
 
 const router = express.Router();
 
@@ -28,9 +29,17 @@ router.get(
 );
 
 
-//Recuperar evento
 
-//EDitar evento
+router.patch(
+  `${EVENT_ROUTE}/edit/:eventId`,
+  authRequired(),
+  requireRole(ROLE.ORGANIZER),
+  validateEventIdParam,
+  validateBody(editEventBodySchema),
+  editEventController
+);
+
+//Recuperar evento
 
 //BorrarEvento
 

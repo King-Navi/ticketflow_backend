@@ -1,4 +1,5 @@
-import { newEventService, searchCompanyEventsService } from "../service/event.service.js";
+import { ConflictError } from "../service/error/classes.js";
+import { editEventService, newEventService, searchCompanyEventsService } from "../service/event.service.js";
 
 
 export async function createEventController(req, res) {
@@ -8,10 +9,16 @@ export async function createEventController(req, res) {
 
         return res.status(201).json({ event_id });
     } catch (err) {
+        if (err instanceof ConflictError) {
+            return res.status(err.statusCode).json({
+                message: err.message,
+                code: err.code
+            });
+        }
     }
     return res.status(500).json({ message: "Error" });
 }
-
+//TODO:
 export async function recoverEventController(req, res) {
     try {
         const result = recoverEventController();
@@ -22,14 +29,59 @@ export async function recoverEventController(req, res) {
 }
 
 export async function editEventController(req, res) {
-    try {
-        const result = editEventController();
-        return res.status(201).json({ msg: "Ok" });
-    } catch (err) {
+  try {
+    const organizerCredentialId = req.user?.sub;
+    const { eventId } = req.params;
+    const payload = req.body;
+    const updatedEvent = await editEventService(eventId, payload, organizerCredentialId);
+    return res.status(200).json({
+      message: "Event updated successfully.",
+      event: updatedEvent,
+    });
+  } catch (err) {
+    if (err instanceof ConflictError || err.code === "EVENT_TIME_CONFLICT" || err.statusCode === 409) {
+      return res.status(409).json({
+        message: "This location is already booked for that time range.",
+        code: "EVENT_TIME_CONFLICT",
+      });
     }
-    return res.status(500).json({ message: "Error" });
+    if (err.message === "Event not found.") {
+      return res.status(404).json({
+        message: "Event not found.",
+      });
+    }
+    if (
+      err.message === "Organizer cannot edit this event." ||
+      err.message === "Organizer for this credential does not exist." ||
+      err.message === "Organizer cannot move this event to another company."
+    ) {
+      return res.status(403).json({
+        message: err.message,
+      });
+    }
+    if (
+      err.message === "event_name cannot be empty." ||
+      err.message === "category cannot be empty." ||
+      err.message === "description cannot be empty." ||
+      err.message === "event_date cannot be empty." ||
+      err.message === "start_time cannot be empty." ||
+      err.message === "end_time must be greater than start_time." ||
+      err.message === "company_id cannot be null." ||
+      err.message === "event_location_id cannot be null."
+    ) {
+      return res.status(400).json({
+        message: err.message,
+      });
+    }
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
 }
 
+
+//TODO:
 export async function deleteEventController(req, res) {
     try {
         const result = deleteEventController();

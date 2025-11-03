@@ -1,0 +1,107 @@
+get:
+  tags: [EventLocation]
+  operationId: listAllLocations
+  summary: Lista todas las ubicaciones de evento (Event Locations)
+  description: >
+    Recupera todas las ubicaciones registradas (event_location), con paginación
+    opcional mediante limit y offset.
+  parameters:
+    - in: query
+      name: limit
+      required: false
+      description: Número máximo de ubicaciones a devolver.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 500
+        default: 50
+      examples:
+        default:
+          value: 50
+        diez:
+          value: 10
+    - in: query
+      name: offset
+      required: false
+      description: Desplazamiento inicial (para paginación).
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      examples:
+        inicio:
+          value: 0
+        segundaPagina:
+          value: 10
+
+  responses:
+    "200":
+      description: Lista paginada de ubicaciones
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              count:
+                type: integer
+                description: Total de registros que cumplen.
+                example: 2
+              rows:
+                type: array
+                items:
+                  $ref: "../schemas/eventLocation.yaml#/EventLocation"
+          examples:
+            ejemplo:
+              value:
+                count: 2
+                rows:
+                  - event_location_id: 9
+                    venue_name: "Main Hall A"
+                    address_line1: "123 Avenida Central"
+                    address_line2: "Piso 2"
+                    city: "CDMX"
+                    state: "CDMX"
+                    country: "México"
+                    postal_code: "01234"
+                    capacity: 300
+                    created_at: "2025-01-15T10:12:00.000Z"
+                    updated_at: "2025-01-15T10:12:00.000Z"
+                  - event_location_id: 5
+                    venue_name: "Auditorio Norte"
+                    address_line1: "456 Calle Reforma"
+                    address_line2: null
+                    city: "Monterrey"
+                    state: "Nuevo León"
+                    country: "México"
+                    postal_code: "64000"
+                    capacity: 120
+                    created_at: "2025-01-10T08:30:00.000Z"
+                    updated_at: "2025-01-10T08:30:00.000Z"
+
+    "400":
+      description: Error de validación en los parámetros de consulta (limit / offset inválidos)
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            invalido:
+              value:
+                message: "Validation error"
+                details:
+                  - message: "\"limit\" must be greater than or equal to 1"
+                    path: ["limit"]
+
+    "500":
+      description: Error interno del servidor
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            serverError:
+              value:
+                message: "Internal server error"
+
+  security:
+    - bearerAuth: []

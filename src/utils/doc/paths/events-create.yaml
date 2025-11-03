@@ -1,5 +1,5 @@
 post:
-  tags: [Events]
+  tags: [Event]
   operationId: createEvent
   summary: Crea un evento
   description: Crea un evento para una compañía determinada.

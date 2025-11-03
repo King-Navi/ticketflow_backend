@@ -1,0 +1,269 @@
+patch:
+  tags: [Event]
+  operationId: editEvent
+  summary: Edita un evento existente
+  description: >
+    Permite que un organizer edite un evento existente de su compañía.
+
+    Reglas de negocio:
+    - Solo puede editar el organizer autenticado si pertenece a la misma `company_id` del evento.
+    - Si se cambia `company_id`, debe ser la misma empresa del organizer.
+    - Si se cambia `event_location_id`, esa ubicación debe existir.
+    - Si se cambian `event_date`, `start_time`, `end_time` o `event_location_id`, se valida que no haya traslape con otro evento ya reservado en ese lugar y franja horaria.
+    - `end_time` puede ser `null` para indicar que no hay hora de fin explícita.
+
+  security:
+    - bearerAuth: []
+
+  parameters:
+    - in: path
+      name: eventId
+      required: true
+      description: ID del evento a editar.
+      schema:
+        type: integer
+        minimum: 1
+      example: 123
+
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          description: >
+            Body parcial estilo PATCH. Solo se actualizan los campos enviados.
+            Al menos uno de estos campos es obligatorio.
+          properties:
+            event_name:
+              type: string
+              minLength: 1
+              maxLength: 255
+              description: Nombre público del evento.
+              example: "AI Summit Guadalajara 2025"
+            category:
+              type: string
+              minLength: 1
+              maxLength: 100
+              description: Categoría lógica o tipo del evento.
+              example: "meetup"
+            description:
+              type: string
+              minLength: 1
+              description: Descripción o agenda del evento.
+              example: "Updated agenda: keynote + advanced workshops + networking session."
+            event_date:
+              type: string
+              pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+              description: Fecha del evento en formato YYYY-MM-DD.
+              example: "2025-12-04"
+            start_time:
+              type: string
+              pattern: "^([01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d$"
+              description: Hora de inicio en formato HH:MM:SS (24h).
+              example: "18:30:00"
+            end_time:
+              oneOf:
+                - type: string
+                  pattern: "^([01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d$"
+                - type: "null"
+              description: >
+                Hora de fin en formato HH:MM:SS (24h). Puede ser null
+                para indicar que el evento no tiene hora de término explícita.
+              example: "21:00:00"
+            company_id:
+              type: integer
+              minimum: 1
+              description: >
+                ID de la empresa dueña del evento. Debe coincidir con la empresa
+                del organizer autenticado.
+              example: 42
+            event_location_id:
+              type: integer
+              minimum: 1
+              description: ID de la ubicación / venue del evento.
+              example: 7
+          anyOf:
+            - required: ["event_name"]
+            - required: ["category"]
+            - required: ["description"]
+            - required: ["event_date"]
+            - required: ["start_time"]
+            - required: ["end_time"]
+            - required: ["company_id"]
+            - required: ["event_location_id"]
+          examples:
+            cambiarNombre:
+              summary: Cambiar solo el nombre
+              value:
+                event_name: "AI Summit Guadalajara 2025"
+            cambiarHorario:
+              summary: Actualizar horario del evento
+              value:
+                start_time: "18:30:00"
+                end_time: "21:00:00"
+            reagendarLugarYFecha:
+              summary: Mover el evento a otra fecha/lugar/horario
+              value:
+                event_date: "2025-12-04"
+                start_time: "10:00:00"
+                end_time: "13:30:00"
+                event_location_id: 12
+            quitarHoraFin:
+              summary: Dejar sin hora de fin explícita
+              value:
+                end_time: null
+            actualizarDescripcion:
+              summary: Ajustar la descripción pública
+              value:
+                description: "Networking + live demo de la plataforma."
+
+  responses:
+    "200":
+      description: Evento actualizado correctamente
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: Event updated successfully.
+              event:
+                type: object
+                description: Estado final del evento después de la actualización.
+                properties:
+                  event_id:
+                    type: integer
+                    example: 123
+                  event_name:
+                    type: string
+                    example: "AI Summit Guadalajara 2025"
+                  category:
+                    type: string
+                    example: "meetup"
+                  description:
+                    type: string
+                    example: "Updated agenda: keynote + advanced workshops + networking session."
+                  event_date:
+                    type: string
+                    example: "2025-12-04"
+                  start_time:
+                    type: string
+                    example: "18:30:00"
+                  end_time:
+                    type: ["string", "null"]
+                    example: "21:00:00"
+                  company_id:
+                    type: integer
+                    example: 42
+                  event_location_id:
+                    type: integer
+                    example: 12
+                  created_at:
+                    type: string
+                    format: date-time
+                    example: "2025-10-10T15:20:00.000Z"
+                  updated_at:
+                    type: string
+                    format: date-time
+                    example: "2025-11-02T18:40:00.000Z"
+          examples:
+            success:
+              summary: Ejemplo de respuesta exitosa
+              value:
+                message: "Event updated successfully."
+                event:
+                  event_id: 123
+                  event_name: "AI Summit Guadalajara 2025"
+                  category: "meetup"
+                  description: "Updated agenda: keynote + advanced workshops + networking session."
+                  event_date: "2025-12-04"
+                  start_time: "18:30:00"
+                  end_time: "21:00:00"
+                  company_id: 42
+                  event_location_id: 12
+                  created_at: "2025-10-10T15:20:00.000Z"
+                  updated_at: "2025-11-02T18:40:00.000Z"
+
+    "400":
+      description: Error de validación en el body (body vacío, formato inválido, etc.)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: Validation error
+          examples:
+            bodyEmpty:
+              summary: No envió ningún campo editable
+              value:
+                message: "At least one of 'event_name', 'category', 'description', 'event_date', 'start_time', 'end_time', 'company_id', or 'event_location_id' is required."
+            invalidFormat:
+              summary: Formato inválido en campos de tiempo/fecha
+              value:
+                message: "\"start_time\" must be in format HH:MM:SS (24h)"
+
+    "403":
+      description: El organizer no tiene permiso para editar este evento
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: Organizer cannot edit this event.
+          examples:
+            notOwner:
+              summary: Evento pertenece a otra empresa
+              value:
+                message: "Organizer cannot edit this event."
+
+    "404":
+      description: El evento no existe o no es accesible
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: Event not found.
+          examples:
+            notFound:
+              value:
+                message: "Event not found."
+
+    "409":
+      description: Conflicto de horario/lugar. Ya hay otro evento asignado en ese rango.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: This location is already booked for that time range.
+              code:
+                type: string
+                example: EVENT_TIME_CONFLICT
+          examples:
+            overlap:
+              summary: Se intentó mover el evento a una franja ocupada
+              value:
+                message: "This location is already booked for that time range."
+                code: "EVENT_TIME_CONFLICT"
+
+    "500":
+      description: Error interno inesperado
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: Internal server error

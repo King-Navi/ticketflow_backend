@@ -2,6 +2,7 @@ import EventRepository from "../repositories/event.repository.js";
 import CompanyRepository from "../repositories/company.repository.js";
 import EventLocationRepository from "../repositories/eventLocation.repository.js";
 import OrganizerRepository from "../repositories/organizer.repository.js";
+import { ConflictError } from "./error/classes.js";
 
 const eventRepo = new EventRepository();
 const companyRepo = new CompanyRepository();
@@ -76,6 +77,25 @@ export async function newEventService(payload, organizerCredentialId) {
     throw new Error(`Organizer cannot create events for company ${company_id}.`);
   }
 
+  const conflict = await eventRepo.findOverlappingEvent({
+    event_location_id,
+    event_date,
+    start_time,
+    end_time,
+  });
+
+  if (conflict) {
+    throw new ConflictError(
+      "This location is already booked for that time range.",
+      {
+        event_location_id,
+        event_date,
+        requested_start: start_time,
+        requested_end: end_time ?? start_time,
+      }
+    );
+  }
+
   const event_id = await eventRepo.createEvent({
     event_name,
     category,
@@ -90,14 +110,118 @@ export async function newEventService(payload, organizerCredentialId) {
 }
 
 export async function recoverEventService() {
-  
+
 }
 
-export async function editEventService() {
-  
+
+/**
+ * Updates an existing event.
+ *
+ * Reglas de negocio:
+ * - Solo el organizer dueño (misma company) puede editar el evento.
+ * - Si intenta cambiar company_id, solo puede poner su propia company.
+ * - Si intenta cambiar event_location_id, esa location debe existir.
+ * - Se valida solapamiento horario (overlap) si cambió fecha / hora / lugar.
+ *
+ * @param {number|string} eventId ID del evento a editar.
+ * @param {object} payload Campos a actualizar (parcial, tipo PATCH).
+ * @param {string} [payload.event_name]
+ * @param {string} [payload.category]
+ * @param {string} [payload.description]
+ * @param {string|Date} [payload.event_date] 'YYYY-MM-DD' o Date.
+ * @param {string} [payload.start_time] 'HH:MM:SS'
+ * @param {string|null} [payload.end_time] 'HH:MM:SS' | null
+ * @param {number} [payload.company_id]
+ * @param {number} [payload.event_location_id]
+ *
+ * @param {number|string} organizerCredentialId  Credential del organizer autenticado.
+ *
+ * @returns {Promise<object>} Event actualizado (plain object).
+ *
+ * @throws {Error|ConflictError}
+ *   - "Organizer for this credential does not exist."
+ *   - "Event not found."
+ *   - "Organizer cannot edit this event."
+ *   - "Organizer cannot move this event to another company."
+ *   - ConflictError (409) si hay traslape de horario/lugar.
+ */
+export async function editEventService(eventId, payload, organizerCredentialId) {
+  const organizer = await organizerRepo.findOrganizerByCredentialId(organizerCredentialId);
+  if (!organizer) {
+    throw new Error("Organizer for this credential does not exist.");
+  }
+
+  const existingEvent = await eventRepo.findById(eventId);
+  if (!existingEvent) {
+    throw new Error("Event not found.");
+  }
+
+  if (organizer.company_id !== existingEvent.company_id) {
+    throw new Error("Organizer cannot edit this event.");
+  }
+
+  if (Object.prototype.hasOwnProperty.call(payload, "company_id")) {
+    const newCompanyId = payload.company_id;
+
+    if (newCompanyId == null) {
+      throw new Error("company_id cannot be null.");
+    }
+
+    if (Number(newCompanyId) !== Number(organizer.company_id)) {
+      throw new Error("Organizer cannot move this event to another company.");
+    }
+
+    const company = await companyRepo.findCompanyById(newCompanyId);
+    if (!company) {
+      throw new Error(`Company ${newCompanyId} does not exist.`);
+    }
+  }
+
+  if (Object.prototype.hasOwnProperty.call(payload, "event_location_id")) {
+    const newLocationId = payload.event_location_id;
+
+    if (newLocationId == null) {
+      throw new Error("event_location_id cannot be null.");
+    }
+
+    const location = await locationRepo.findByEventLocationId(newLocationId);
+    if (!location) {
+      throw new Error(`EventLocation ${newLocationId} does not exist.`);
+    }
+  }
+  try {
+    const updated = await eventRepo.updateEventById(eventId, payload);
+
+    return updated;
+  } catch (err) {
+    if (err.code === "EVENT_TIME_CONFLICT") {
+      const requested_start = payload.start_time ?? existingEvent.start_time;
+      const requested_end =
+        (payload.end_time ?? existingEvent.end_time) ?? requested_start;
+      const final_event_location_id =
+        payload.event_location_id ?? existingEvent.event_location_id;
+      const final_event_date =
+        payload.event_date ?? existingEvent.event_date;
+
+      throw new ConflictError(
+        "This location is already booked for that time range.",
+        {
+          event_location_id: final_event_location_id,
+          event_date: final_event_date,
+          requested_start,
+          requested_end,
+        }
+      );
+    }
+
+    throw err;
+  }
 }
+
+
+
 export async function deleteEventService() {
-  
+
 }
 
 export async function searchCompanyEventsService({ name, date, category, ...rest } = {}) {

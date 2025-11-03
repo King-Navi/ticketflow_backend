@@ -218,18 +218,250 @@ export default class EventRepository {
       distinct: Boolean(include)
     });
   }
-  async findByName(name, opts = {}) {
-    if (!name || !String(name).trim()) throw new Error("name is required.");
-    return this.searchOneFilter({ ...opts, name, date: undefined, category: undefined });
+
+  /**
+   * Check if there is any time overlap at the same location on the same date.
+   *
+   * @param {object} data
+   * @param {number} data.event_location_id
+   * @param {string|Date} data.event_date        // 'YYYY-MM-DD' o Date
+   * @param {string} data.start_time             // 'HH:MM:SS'
+   * @param {string|null} data.end_time          // 'HH:MM:SS' | null
+   * @returns {Promise<object|null>} first conflicting event or null
+   */
+  async findOverlappingEvent({
+    event_location_id,
+    event_date,
+    start_time,
+    end_time,
+  }) {
+    const requestedEnd = end_time ?? start_time;
+
+    try {
+      const conflict = await this.model.findOne({
+        where: {
+          event_location_id,
+          event_date,
+          [Op.and]: [
+            Sequelize.where(
+              Sequelize.col("start_time"),
+              { [Op.lt]: requestedEnd }
+            ),
+            Sequelize.where(
+              Sequelize.fn(
+                "COALESCE",
+                Sequelize.col("end_time"),
+                Sequelize.col("start_time")
+              ),
+              { [Op.gt]: start_time }
+            ),
+          ],
+        },
+        order: [["start_time", "ASC"]],
+      });
+
+      return conflict;
+    } catch (error) {
+      if (error instanceof Sequelize.ConnectionError) {
+        throw new Error("Cannot connect to the database.");
+      }
+      if (error instanceof Sequelize.DatabaseError) {
+        throw new Error("Database error occurred.");
+      }
+      throw error;
+    }
+  }
+  /**
+ * Update an existing event by its ID, with collision (overlap) check.
+ *
+ * Allows partial updates (PATCH style). Only provided fields are changed.
+ * Also prevents overlapping schedule in the same location and date.
+ *
+ * @param {number} eventId
+ * @param {object} data
+ * @param {string} [data.event_name]
+ * @param {string} [data.category]
+ * @param {string} [data.description]
+ * @param {string|Date} [data.event_date]         // 'YYYY-MM-DD' or Date
+ * @param {string} [data.start_time]              // 'HH:MM:SS'
+ * @param {string|null} [data.end_time]           // 'HH:MM:SS' | null
+ * @param {number} [data.company_id]
+ * @param {number} [data.event_location_id]
+ *
+ * @param {object} [options]
+ * @param {import('sequelize').Transaction} [options.transaction]
+ *
+ * @returns {Promise<object>} updated event (plain object)
+ *
+ * @throws {Error} if event not found, invalid data, or overlapping conflict
+ */
+  async updateEventById(eventId, data = {}, { transaction } = {}) {
+    try {
+      if (!eventId) {
+        throw new Error("eventId is required.");
+      }
+      const current = await this.model.findByPk(eventId, { transaction });
+      if (!current) {
+        throw new Error("Event not found.");
+      }
+
+      const updates = {};
+
+      if (Object.prototype.hasOwnProperty.call(data, "event_name")) {
+        if (!data.event_name) {
+          throw new Error("event_name cannot be empty.");
+        }
+        updates.event_name = data.event_name;
+      }
+
+      if (Object.prototype.hasOwnProperty.call(data, "category")) {
+        if (!data.category) {
+          throw new Error("category cannot be empty.");
+        }
+        updates.category = data.category;
+      }
+
+      if (Object.prototype.hasOwnProperty.call(data, "description")) {
+        if (!data.description) {
+          throw new Error("description cannot be empty.");
+        }
+        updates.description = data.description;
+      }
+
+      if (Object.prototype.hasOwnProperty.call(data, "event_date")) {
+        if (!data.event_date) {
+          throw new Error("event_date cannot be empty.");
+        }
+        updates.event_date = data.event_date;
+      }
+
+      if (Object.prototype.hasOwnProperty.call(data, "start_time")) {
+        if (!data.start_time) {
+          throw new Error("start_time cannot be empty.");
+        }
+        updates.start_time = data.start_time;
+      }
+
+      if (Object.prototype.hasOwnProperty.call(data, "end_time")) {
+        updates.end_time = data.end_time ?? null;
+      }
+
+      if (Object.prototype.hasOwnProperty.call(data, "company_id")) {
+        updates.company_id = data.company_id;
+      }
+
+      if (Object.prototype.hasOwnProperty.call(data, "event_location_id")) {
+        updates.event_location_id = data.event_location_id;
+      }
+
+      const final_event_date =
+        updates.event_date !== undefined ? updates.event_date : current.event_date;
+
+      const final_start_time =
+        updates.start_time !== undefined ? updates.start_time : current.start_time;
+
+      const final_end_time =
+        updates.end_time !== undefined
+          ? updates.end_time
+          : (current.end_time ?? null);
+
+      const final_event_location_id =
+        updates.event_location_id !== undefined
+          ? updates.event_location_id
+          : current.event_location_id;
+
+      if (final_end_time != null) {
+        if (!(final_end_time > final_start_time)) {
+          throw new Error("end_time must be greater than start_time.");
+        }
+      }
+
+      const scheduleFieldsTouched =
+        Object.prototype.hasOwnProperty.call(updates, "event_date") ||
+        Object.prototype.hasOwnProperty.call(updates, "start_time") ||
+        Object.prototype.hasOwnProperty.call(updates, "end_time") ||
+        Object.prototype.hasOwnProperty.call(updates, "event_location_id");
+
+      if (scheduleFieldsTouched) {
+        const requestedEnd = final_end_time ?? final_start_time;
+
+        const conflict = await this.model.findOne({
+          where: {
+            event_location_id: final_event_location_id,
+            event_date: final_event_date,
+            event_id: { [Op.ne]: eventId },
+            [Op.and]: [
+              Sequelize.where(
+                Sequelize.col("start_time"),
+                { [Op.lt]: requestedEnd }
+              ),
+              Sequelize.where(
+                Sequelize.fn(
+                  "COALESCE",
+                  Sequelize.col("end_time"),
+                  Sequelize.col("start_time")
+                ),
+                { [Op.gt]: final_start_time }
+              ),
+            ],
+          },
+          order: [["start_time", "ASC"]],
+          transaction
+        });
+
+        if (conflict) {
+          const err = new Error("This location is already booked for that time range.");
+          err.code = "EVENT_TIME_CONFLICT";
+          err.statusCode = 409;
+          throw err;
+        }
+      }
+
+      if (Object.keys(updates).length === 0) {
+        return current.get({ plain: true });
+      }
+
+      const [count, rows] = await this.model.update(
+        {
+          ...updates,
+          updatedAt: new Date(),
+        },
+        {
+          where: { event_id: eventId },
+          returning: true,
+          transaction,
+        }
+      );
+
+      if (count === 0 || !rows || !rows[0]) {
+        throw new Error("Event not found.");
+      }
+
+      return rows[0].get({ plain: true });
+    } catch (error) {
+      if (error instanceof Sequelize.ConnectionError) {
+        throw new Error("Cannot connect to the database.");
+      }
+      if (error instanceof Sequelize.DatabaseError) {
+        throw new Error("Database error occurred.");
+      }
+      throw error;
+    }
   }
 
-  async findByDate(date, opts = {}) {
-    if (!date || !String(date).trim?.()) throw new Error("date is required.");
-    return this.searchOneFilter({ ...opts, name: undefined, date, category: undefined });
-  }
 
-  async findByCategory(category, opts = {}) {
-    if (!category || !String(category).trim()) throw new Error("category is required.");
-    return this.searchOneFilter({ ...opts, name: undefined, date: undefined, category });
-  }
+  // async findByName(name, opts = {}) {
+  //   if (!name || !String(name).trim()) throw new Error("name is required.");
+  //   return this.searchOneFilter({ ...opts, name, date: undefined, category: undefined });
+  // }
+
+  // async findByDate(date, opts = {}) {
+  //   if (!date || !String(date).trim?.()) throw new Error("date is required.");
+  //   return this.searchOneFilter({ ...opts, name: undefined, date, category: undefined });
+  // }
+
+  // async findByCategory(category, opts = {}) {
+  //   if (!category || !String(category).trim()) throw new Error("category is required.");
+  //   return this.searchOneFilter({ ...opts, name: undefined, date: undefined, category });
+  // }
 }

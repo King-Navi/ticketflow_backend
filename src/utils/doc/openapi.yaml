@@ -24,6 +24,13 @@ paths:
     $ref: "./paths/events-create.yaml"
   /v1/events/events/search:
     $ref: "./paths/events-search.yaml"
+  /v1/events/edit/:eventId:
+    $ref: "./paths/events-edit.yaml"
+  /v1/location/search/all:
+    $ref: "./paths/location-search-all.yaml"
+  /v1/organizer/edit:
+    $ref: "./paths/organizer-update.yaml"
+  
 components:
   securitySchemes:
     bearerAuth:
@@ -40,3 +47,7 @@ components:
     Event: { $ref: "./schemas/event.yaml#/Event" }
     EventCreateRequest: { $ref: "./schemas/event.yaml#/EventCreateRequest" }
     EventListResponse: { $ref: "./schemas/event.yaml#/EventListResponse" }
+    EventLocation:
+      $ref: "./schemas/eventLocation.yaml#/EventLocation"
+    UpdateOrganizerRequest: { $ref: "./schemas/organizer.yaml#/UpdateOrganizerRequest" }
+    UpdateOrganizerResponse: { $ref: "./schemas/organizer.yaml#/UpdateOrganizerResponse" }
