@@ -50,11 +50,20 @@ export default class event extends Model {
         model: 'event_location',
         key: 'event_location_id'
       }
+    },
+    event_status_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'event_status',
+        key: 'event_status_id'
+      }
     }
   }, {
     sequelize,
     tableName: 'event',
     schema: 'public',
+    hasTrigger: true,
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
@@ -78,6 +87,12 @@ export default class event extends Model {
         name: "idx_event_event_location_id",
         fields: [
           { name: "event_location_id" },
+        ]
+      },
+      {
+        name: "idx_event_event_status_id",
+        fields: [
+          { name: "event_status_id" },
         ]
       },
     ]

@@ -214,12 +214,6 @@ export async function editEventService(eventId, payload, organizerCredentialId) 
   }
 }
 
-
-
-export async function deleteEventService() {
-
-}
-
 export async function searchCompanyEventsService({ name, date, category, ...rest } = {}) {
   const provided = [!!(name?.trim?.()), !!(date?.toString?.()), !!(category?.trim?.())].filter(Boolean).length;
   if (provided !== 1) {
