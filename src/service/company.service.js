@@ -1,4 +1,3 @@
-// service/company.service.js
 import EventRepository from "../repositories/event.repository.js";
 
 /**

@@ -39,9 +39,9 @@ router.patch(
   editEventController
 );
 
-//Recuperar evento
+//TODO:Recuperar evento
 
-//BorrarEvento
+//TODO: BorrarEvento
 
 
 

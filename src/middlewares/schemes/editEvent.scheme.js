@@ -41,7 +41,6 @@ export const editEventBodySchema = Joi.object({
     .integer()
     .positive(),
 })
-  // al menos uno debe venir
   .or(
     "event_name",
     "category",

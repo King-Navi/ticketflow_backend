@@ -1,31 +1,39 @@
 import { ConflictError } from "../service/error/classes.js";
 import { editEventService, newEventService, searchCompanyEventsService } from "../service/event.service.js";
+import { Unauthorized } from "../utils/errors/error.400.js";
 
 
 export async function createEventController(req, res) {
-    try {
-        const organizerCredentialId = req.user?.sub;
-        const event_id = await newEventService(req.body, organizerCredentialId);
+  try {
+    const organizerCredentialId = req.user?.sub;
+    const event_id = await newEventService(req.body, organizerCredentialId);
 
-        return res.status(201).json({ event_id });
-    } catch (err) {
-        if (err instanceof ConflictError) {
-            return res.status(err.statusCode).json({
-                message: err.message,
-                code: err.code
-            });
-        }
+    return res.status(201).json({ event_id });
+  } catch (err) {
+    if (err instanceof ConflictError) {
+      return res.status(err.statusCode).json({
+        message: err.message,
+        code: err.code
+      });
     }
-    return res.status(500).json({ message: "Error" });
+    if (err instanceof Unauthorized) {
+      return res.status(err.code).json({
+        message: err.message,
+        code: err.name
+      });
+    }
+    console.log(err)
+  }
+  return res.status(500).json({ message: "Error" });
 }
 //TODO:
 export async function recoverEventController(req, res) {
-    try {
-        const result = recoverEventController();
-        return res.status(201).json({ msg: "Ok" });
-    } catch (err) {
-    }
-    return res.status(500).json({ message: "Error" });
+  try {
+    const result = recoverEventController();
+    return res.status(201).json({ msg: "Ok" });
+  } catch (err) {
+  }
+  return res.status(500).json({ message: "Error" });
 }
 
 export async function editEventController(req, res) {
@@ -83,24 +91,24 @@ export async function editEventController(req, res) {
 
 //TODO:
 export async function deleteEventController(req, res) {
-    try {
-        const result = deleteEventController();
-        return res.status(201).json({ msg: "Ok" });
-    } catch (err) {
-    }
-    return res.status(500).json({ message: "Error" });
+  try {
+    const result = deleteEventController();
+    return res.status(201).json({ msg: "Ok" });
+  } catch (err) {
+  }
+  return res.status(500).json({ message: "Error" });
 }
 
 export async function searchCompanyEventsController(req, res) {
-    try {
-        const q = (res.locals?.validated?.query) ?? req.query;
+  try {
+    const q = (res.locals?.validated?.query) ?? req.query;
 
-        const { name, date, category, limit, offset, orderBy, orderDir, full } = q;
-        const { rows, count } = await searchCompanyEventsService({
-            name, date, category, limit, offset, orderBy, orderDir, include: full ? undefined : undefined
-        });
-        return res.json({ count, rows });
-    } catch (err) {
-    }
-    return res.status(500).json({ message: "Error" });
+    const { name, date, category, limit, offset, orderBy, orderDir, full } = q;
+    const { rows, count } = await searchCompanyEventsService({
+      name, date, category, limit, offset, orderBy, orderDir, include: full ? undefined : undefined
+    });
+    return res.json({ count, rows });
+  } catch (err) {
+  }
+  return res.status(500).json({ message: "Error" });
 }

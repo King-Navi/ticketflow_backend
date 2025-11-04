@@ -3,6 +3,7 @@ import CompanyRepository from "../repositories/company.repository.js";
 import EventLocationRepository from "../repositories/eventLocation.repository.js";
 import OrganizerRepository from "../repositories/organizer.repository.js";
 import { ConflictError } from "./error/classes.js";
+import { Unauthorized } from "../utils/errors/error.400.js";
 
 const eventRepo = new EventRepository();
 const companyRepo = new CompanyRepository();
@@ -74,7 +75,7 @@ export async function newEventService(payload, organizerCredentialId) {
   if (!location) throw new Error(`EventLocation ${event_location_id} does not exist.`);
   if (!organizer) throw new Error(`Organizer for this credential does not exist.`);
   if (organizer.company_id !== company_id) {
-    throw new Error(`Organizer cannot create events for company ${company_id}.`);
+    throw new Unauthorized(`Organizer cannot create events for company ${company_id}.`);
   }
 
   const conflict = await eventRepo.findOverlappingEvent({
@@ -108,11 +109,6 @@ export async function newEventService(payload, organizerCredentialId) {
   });
   return event_id;
 }
-
-export async function recoverEventService() {
-
-}
-
 
 /**
  * Updates an existing event.
