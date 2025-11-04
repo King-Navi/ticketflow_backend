@@ -12,6 +12,7 @@ import _event_location from  "./event_location.js";
 import _event_seat from  "./event_seat.js";
 import _event_seat_status from  "./event_seat_status.js";
 import _organizer from  "./organizer.js";
+import _password_reset_token from  "./password_reset_token.js";
 import _payment from  "./payment.js";
 import _payment_method from  "./payment_method.js";
 import _refund from  "./refund.js";
@@ -35,6 +36,7 @@ export default function initModels(sequelize) {
   const event_seat = _event_seat.init(sequelize, DataTypes);
   const event_seat_status = _event_seat_status.init(sequelize, DataTypes);
   const organizer = _organizer.init(sequelize, DataTypes);
+  const password_reset_token = _password_reset_token.init(sequelize, DataTypes);
   const payment = _payment.init(sequelize, DataTypes);
   const payment_method = _payment_method.init(sequelize, DataTypes);
   const refund = _refund.init(sequelize, DataTypes);
@@ -59,6 +61,8 @@ export default function initModels(sequelize) {
   credential.hasOne(attendee, { as: "attendee", foreignKey: "credential_id"});
   organizer.belongsTo(credential, { as: "credential", foreignKey: "credential_id"});
   credential.hasOne(organizer, { as: "organizer", foreignKey: "credential_id"});
+  password_reset_token.belongsTo(credential, { as: "credential", foreignKey: "credential_id"});
+  credential.hasMany(password_reset_token, { as: "password_reset_tokens", foreignKey: "credential_id"});
   event_image.belongsTo(event, { as: "event", foreignKey: "event_id"});
   event.hasMany(event_image, { as: "event_images", foreignKey: "event_id"});
   event_seat.belongsTo(event, { as: "event", foreignKey: "event_id"});
@@ -109,6 +113,7 @@ export default function initModels(sequelize) {
     event_seat,
     event_seat_status,
     organizer,
+    password_reset_token,
     payment,
     payment_method,
     refund,

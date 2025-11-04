@@ -16,6 +16,12 @@ security:
   - bearerAuth: []
 
 paths:
+  /v1/auth/password/forgot:
+    $ref: "./paths/auth-password-forgot.yaml"
+  /v1/auth/password/reset/validate:
+    $ref: "./paths/auth-password-reset-validate.yaml"
+  /v1/auth/password/reset:
+    $ref: "./paths/auth-password-reset.yaml"
   /v1/login:
     $ref: "./paths/auth-login.yaml"
   /v1/user/register:
@@ -89,3 +95,5 @@ components:
       $ref: "./schemas/authRegister.yaml#/RegisterResult"
     EventImageUploadResponse:
       $ref: "./schemas/event-image.yaml#/EventImageUploadResponse"
+    PasswordForgotRequest:
+      $ref: "./schemas/auth-password.yaml#/PasswordForgotRequest"

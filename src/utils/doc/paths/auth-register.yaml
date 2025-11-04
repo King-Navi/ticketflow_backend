@@ -1,4 +1,4 @@
-post:
+put:
   tags: [User]
   operationId: register
   summary: Register a new user (attendee or organizer)
