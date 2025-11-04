@@ -1,0 +1,99 @@
+get:
+  tags: [EventImage]
+  operationId: getEventImages
+  summary: Get all images for an event
+  description: Returns the list of images associated to an event, with public URLs.
+  parameters:
+    - in: path
+      name: eventId
+      required: true
+      description: Event identifier
+      schema:
+        type: integer
+        minimum: 1
+  responses:
+    "200":
+      description: Images found
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [event_id, images]
+            properties:
+              event_id:
+                type: integer
+                example: 12
+              images:
+                type: array
+                items:
+                  type: object
+                  required: [event_image_id, event_id, event_image_type_id, image_path]
+                  properties:
+                    event_image_id:
+                      type: integer
+                      example: 5
+                    event_id:
+                      type: integer
+                      example: 12
+                    event_image_type_id:
+                      type: integer
+                      example: 1
+                    image_type:
+                      type: string
+                      nullable: true
+                      description: Present only if the service could resolve the type code.
+                      example: cover
+                    alt_text:
+                      type: string
+                      nullable: true
+                      example: "Portada del evento"
+                    sort_order:
+                      type: integer
+                      nullable: true
+                      example: 1
+                    image_path:
+                      type: string
+                      description: Public URL for the image
+                      example: "/static/events/12/1719946059123-123456789.png"
+    "400":
+      description: Invalid eventId path parameter
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+          examples:
+            missing:
+              value:
+                message: "Path param 'eventId' is required."
+            not_positive:
+              value:
+                message: "'eventId' must be a positive integer."
+    "404":
+      description: Event not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              msg:
+                type: string
+          examples:
+            not_found:
+              value:
+                msg: "Event not found."
+    "500":
+      description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              msg:
+                type: string
+          examples:
+            server_error:
+              value:
+                msg: "Error retrieving event images."

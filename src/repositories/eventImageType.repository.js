@@ -1,6 +1,5 @@
-// repositories/eventImageType.repository.js
 import { Sequelize } from "sequelize";
-import EventImageType from "../model_db/event_image_type.js"; // tu modelo generado
+import EventImageType from "../model_db/event_image_type.js";
 
 export default class EventImageTypeRepository {
   constructor(model = EventImageType) {

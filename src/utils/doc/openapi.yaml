@@ -28,8 +28,10 @@ paths:
     $ref: "./paths/events-search.yaml"
   /v1/events/edit/:eventId:
     $ref: "./paths/events-edit.yaml"
-  /v1/event/img/:eventId/images:
+  /v1/event/img/:eventId/new:
     $ref: "./paths/event-upload-image.yaml"
+  /v1/event/img/:eventId/images:
+    $ref: "./paths/event-img-getall-by-id.yaml"
   /v1/eventseats/with-event:
     $ref: "./paths/eventseats-with-event.yaml"
   /v1/location/search/all:

@@ -114,19 +114,16 @@ export async function getEventImagesService(eventId) {
 
   const raws = await eventImageRepo.findAllByEventId(id);
 
-  // mapeamos para devolver rutas públicas
   const images = raws.map((row) => {
-    // si guardaste ruta física:
-    const storedPath = row.image_path; // ej: uploads/events/1/xxx.png
+    const storedPath = row.image_path;
     const filename = path.basename(storedPath);
     const publicPath = `/${PUBLIC_BASE}/${id}/${filename}`;
 
     return {
       event_image_id: row.event_image_id,
       event_id: row.event_id,
-      image_type: row.event_image_type
-        ? row.event_image_type.code
-        : undefined,
+      event_image_type_id: row.event_image_type_id,
+      image_type: row.event_image_type ? row.event_image_type.code : undefined,
       alt_text: row.alt_text,
       sort_order: row.sort_order,
       image_path: publicPath,

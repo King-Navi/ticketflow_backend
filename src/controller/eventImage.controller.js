@@ -1,4 +1,4 @@
-import { createEventImageService } from "../service/eventImage.service.js";
+import { createEventImageService, getEventImagesService } from "../service/eventImage.service.js";
 
 export async function createEventImageController(req, res) {
   try {
@@ -27,6 +27,22 @@ export async function createEventImageController(req, res) {
     const status = err.statusCode || 500;
     return res.status(status).json({
       msg: err.message || "Error uploading image.",
+    });
+  }
+}
+
+
+export async function getEventImagesController(req, res) {
+  try {
+    const { eventId } = req.params;
+
+    const result = await getEventImagesService(eventId);
+
+    return res.status(200).json(result);
+  } catch (err) {
+    const status = err.statusCode || 500;
+    return res.status(status).json({
+      msg: err.message || "Error retrieving event images.",
     });
   }
 }

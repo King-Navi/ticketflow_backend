@@ -55,7 +55,7 @@ export default class EventImageRepository {
   }
 
   /**
-   * Get all images for an event, optionally including the type
+   * Get all images for an event
    * @param {number} eventId
    * @returns {Promise<Array<object>>}
    */
@@ -69,14 +69,6 @@ export default class EventImageRepository {
           ["sort_order", "ASC"],
           ["event_image_id", "ASC"],
         ],
-        include: [
-          {
-            model: EventImageType,
-            as: "event_image_type",
-            attributes: ["event_image_type_id", "code", "description"],
-            required: false,
-          },
-        ],
       });
     } catch (error) {
       if (error instanceof Sequelize.ConnectionError) {
@@ -88,4 +80,5 @@ export default class EventImageRepository {
       throw error;
     }
   }
+
 }

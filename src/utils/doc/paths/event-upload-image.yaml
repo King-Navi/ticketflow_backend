@@ -1,4 +1,4 @@
-post:
+put:
   tags: [EventImage]
   operationId: uploadEventImage
   summary: Upload an image for an event

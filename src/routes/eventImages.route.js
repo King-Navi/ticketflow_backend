@@ -2,7 +2,7 @@ import express from "express";
 import { authRequired, requireRole } from "../middlewares/authVerify.middleware.js";
 import { ROLE } from "../model_db/utils/role.js";
 import { uploadEventImage } from "../middlewares/uploadEventImage.middleware.js";
-import { createEventImageController } from "../controller/eventImage.controller.js";
+import { createEventImageController, getEventImagesController } from "../controller/eventImage.controller.js";
 
 import {
   validateParams,
@@ -19,7 +19,7 @@ const EVENT_IMG_ROUTE = "/v1/event/img";
 
 const router = express.Router();
 
-router.post(
+router.put(
   `${EVENT_IMG_ROUTE}/:eventId/new`,
   authRequired(),
   requireRole(ROLE.ORGANIZER, ROLE.ADMIN),
@@ -28,6 +28,12 @@ router.post(
   validateParams(eventImageParamsSchema),
   validate(eventImageBodySchema, "body"), 
   createEventImageController
+);
+
+router.get(
+  `${EVENT_IMG_ROUTE}/:eventId/images`,
+  validateEventIdParam,
+  getEventImagesController
 );
 
 export default router;
