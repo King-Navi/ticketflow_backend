@@ -6,6 +6,8 @@ import _company from  "./company.js";
 import _credential from  "./credential.js";
 import _crypto_payment from  "./crypto_payment.js";
 import _event from  "./event.js";
+import _event_image from  "./event_image.js";
+import _event_image_type from  "./event_image_type.js";
 import _event_location from  "./event_location.js";
 import _event_seat from  "./event_seat.js";
 import _event_seat_status from  "./event_seat_status.js";
@@ -27,6 +29,8 @@ export default function initModels(sequelize) {
   const credential = _credential.init(sequelize, DataTypes);
   const crypto_payment = _crypto_payment.init(sequelize, DataTypes);
   const event = _event.init(sequelize, DataTypes);
+  const event_image = _event_image.init(sequelize, DataTypes);
+  const event_image_type = _event_image_type.init(sequelize, DataTypes);
   const event_location = _event_location.init(sequelize, DataTypes);
   const event_seat = _event_seat.init(sequelize, DataTypes);
   const event_seat_status = _event_seat_status.init(sequelize, DataTypes);
@@ -55,8 +59,12 @@ export default function initModels(sequelize) {
   credential.hasOne(attendee, { as: "attendee", foreignKey: "credential_id"});
   organizer.belongsTo(credential, { as: "credential", foreignKey: "credential_id"});
   credential.hasOne(organizer, { as: "organizer", foreignKey: "credential_id"});
+  event_image.belongsTo(event, { as: "event", foreignKey: "event_id"});
+  event.hasMany(event_image, { as: "event_images", foreignKey: "event_id"});
   event_seat.belongsTo(event, { as: "event", foreignKey: "event_id"});
   event.hasMany(event_seat, { as: "event_seats", foreignKey: "event_id"});
+  event_image.belongsTo(event_image_type, { as: "event_image_type", foreignKey: "event_image_type_id"});
+  event_image_type.hasMany(event_image, { as: "event_images", foreignKey: "event_image_type_id"});
   event.belongsTo(event_location, { as: "event_location", foreignKey: "event_location_id"});
   event_location.hasMany(event, { as: "events", foreignKey: "event_location_id"});
   section.belongsTo(event_location, { as: "event_location", foreignKey: "event_location_id"});
@@ -95,6 +103,8 @@ export default function initModels(sequelize) {
     credential,
     crypto_payment,
     event,
+    event_image,
+    event_image_type,
     event_location,
     event_seat,
     event_seat_status,

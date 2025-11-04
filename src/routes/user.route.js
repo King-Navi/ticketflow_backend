@@ -13,7 +13,7 @@ const router = express.Router();
 const LOGIN_ROUTE = "/v1/user";
 
 
-router.post(`${LOGIN_ROUTE}`,
+router.put(`${LOGIN_ROUTE}`,
     validateBody(registerSchema),
     registerController
 );

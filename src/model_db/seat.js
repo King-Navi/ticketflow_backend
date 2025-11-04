@@ -50,6 +50,13 @@ export default class seat extends Model {
           { name: "seat_id" },
         ]
       },
+      {
+        name: "uq_seat_in_section_ci",
+        unique: true,
+        fields: [
+          { name: "section_id" },
+        ]
+      },
     ]
   });
   }

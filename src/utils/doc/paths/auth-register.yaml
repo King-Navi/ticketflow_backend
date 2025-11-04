@@ -1,0 +1,55 @@
+post:
+  tags: [User]
+  operationId: register
+  summary: Register a new user (attendee or organizer)
+  description: >
+    Creates a credential and, depending on the role, also creates the attendee or organizer profile.
+  security: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "../schemas/authRegister.yaml#/RegisterRequest"
+        examples:
+          attendee_example:
+            value:
+              email: "user@example.com"
+              nickname: "user123"
+              passwordHash: "secret123"
+              role: "attendee"
+              attendee:
+                firstName: "Ana"
+                lastName: "Pérez"
+                middleName: ""
+          organizer_example:
+            value:
+              email: "org@example.com"
+              nickname: "org001"
+              passwordHash: "secret123"
+              role: "organizer"
+              organizer:
+                firstName: "Carlos"
+                lastName: "López"
+                middleName: null
+                idCompany: 5
+  responses:
+    "201":
+      description: User registered successfully
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/authRegister.yaml#/RegisterEnvelope"
+          examples:
+            attendee_created:
+              value:
+                message: "User registered successfully."
+                result:
+                  credential_id: 101
+                  idAttendee: 77
+            organizer_created:
+              value:
+                message: "User registered successfully."
+                result:
+                  credential_id: 102
+                  idOrganizer: 55

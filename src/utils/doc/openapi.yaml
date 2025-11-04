@@ -18,6 +18,8 @@ security:
 paths:
   /v1/login:
     $ref: "./paths/auth-login.yaml"
+  /v1/user/register:
+    $ref: "./paths/auth-register.yaml"
   /v1/company/:companyId/events:
     $ref: "./paths/company-events.yaml"
   /v1/events/new:
@@ -26,6 +28,8 @@ paths:
     $ref: "./paths/events-search.yaml"
   /v1/events/edit/:eventId:
     $ref: "./paths/events-edit.yaml"
+  /v1/event/img/:eventId/images:
+    $ref: "./paths/event-upload-image.yaml"
   /v1/eventseats/with-event:
     $ref: "./paths/eventseats-with-event.yaml"
   /v1/location/search/all:
@@ -75,3 +79,11 @@ components:
       $ref: "./schemas/eventseats.yaml#/InventoryCreatedItem"
     Counts:
       $ref: "./schemas/eventseats.yaml#/Counts"
+    RegisterRequest:
+      $ref: "./schemas/authRegister.yaml#/RegisterRequest"
+    RegisterEnvelope:
+      $ref: "./schemas/authRegister.yaml#/RegisterEnvelope"
+    RegisterResult:
+      $ref: "./schemas/authRegister.yaml#/RegisterResult"
+    EventImageUploadResponse:
+      $ref: "./schemas/event-image.yaml#/EventImageUploadResponse"

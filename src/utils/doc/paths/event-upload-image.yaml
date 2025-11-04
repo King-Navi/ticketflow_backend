@@ -1,0 +1,142 @@
+post:
+  tags: [EventImage]
+  operationId: uploadEventImage
+  summary: Upload an image for an event
+  description: >
+    Uploads an image file for an existing event.  
+    Only organizers of the same company as the event (or admins) can upload images.
+    The file must be sent as multipart/form-data.
+  security:
+    - bearerAuth: []
+  parameters:
+    - in: path
+      name: eventId
+      required: true
+      description: Event identifier
+      schema:
+        type: integer
+        minimum: 1
+  requestBody:
+    required: true
+    content:
+      multipart/form-data:
+        schema:
+          type: object
+          required:
+            - image
+          properties:
+            image:
+              type: string
+              format: binary
+              description: Image file to upload
+            imageType:
+              type: string
+              maxLength: 50
+              description: Logical type of the image (e.g. cover, banner, gallery)
+              example: cover
+            altText:
+              type: string
+              maxLength: 200
+              description: Alternative text for accessibility
+            sortOrder:
+              type: integer
+              minimum: 0
+              description: Order for displaying images of the same event
+        encoding:
+          image:
+            contentType: image/png, image/jpeg, image/webp
+  responses:
+    "201":
+      description: Image uploaded successfully
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/event-image.yaml#/EventImageUploadResponse"
+          examples:
+            success:
+              value:
+                message: "Image uploaded successfully."
+                event_image_id: 12
+                image_path: "/static/events/42/1719946059123-123456789.png"
+    "400":
+      description: Bad request (invalid eventId or missing file or invalid body)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+              msg:
+                type: string
+          examples:
+            invalid_event_id:
+              value:
+                message: "'eventId' must be a positive integer."
+            missing_file:
+              value:
+                msg: "Image file is required (field 'image')."
+    "401":
+      description: Missing or invalid JWT
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "UNAUTHORIZED"
+              message:
+                type: string
+          examples:
+            missing_token:
+              value:
+                code: "UNAUTHORIZED"
+                message: "Missing Bearer token."
+            invalid_token:
+              value:
+                code: "UNAUTHORIZED"
+                message: "Invalid or expired token."
+    "403":
+      description: Insufficient role
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "FORBIDDEN"
+              message:
+                type: string
+          examples:
+            forbidden:
+              value:
+                code: "FORBIDDEN"
+                message: "Insufficient role."
+    "404":
+      description: Event not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              msg:
+                type: string
+          examples:
+            not_found:
+              value:
+                msg: "Event not found."
+    "500":
+      description: Server error while saving image
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              msg:
+                type: string
+          examples:
+            server_error:
+              value:
+                msg: "Error uploading image."

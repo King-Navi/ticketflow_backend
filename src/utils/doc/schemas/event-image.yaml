@@ -1,0 +1,17 @@
+EventImageUploadResponse:
+  type: object
+  required: [message, event_image_id, image_path]
+  properties:
+    message:
+      type: string
+      example: "Image uploaded successfully."
+    event_image_id:
+      type: integer
+      minimum: 1
+      example: 12
+    image_path:
+      type: string
+      description: >
+        Public URL to the uploaded image.  
+        This corresponds to the static route exposed by the server (e.g. /static/events/{eventId}/...).
+      example: "/static/events/42/1719946059123-123456789.png"

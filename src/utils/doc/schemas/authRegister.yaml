@@ -1,0 +1,88 @@
+RegisterRequest:
+  type: object
+  additionalProperties: false
+  required: [email, passwordHash, role]
+  properties:
+    email:
+      type: string
+      format: email
+      maxLength: 100
+    nickname:
+      type: string
+      maxLength: 100
+      nullable: true
+    passwordHash:
+      type: string
+      minLength: 6
+      maxLength: 255
+    role:
+      type: string
+      enum: [attendee, organizer]
+    attendee:
+      $ref: "#/AttendeePayload"
+    organizer:
+      $ref: "#/OrganizerPayload"
+
+AttendeePayload:
+  type: object
+  additionalProperties: false
+  required: [firstName, lastName]
+  properties:
+    firstName:
+      type: string
+      maxLength: 100
+    lastName:
+      type: string
+      maxLength: 100
+    middleName:
+      type: string
+      maxLength: 100
+      nullable: true
+
+OrganizerPayload:
+  type: object
+  additionalProperties: false
+  required: [firstName, lastName]
+  properties:
+    firstName:
+      type: string
+      maxLength: 100
+    lastName:
+      type: string
+      maxLength: 100
+    middleName:
+      type: string
+      maxLength: 100
+      nullable: true
+    idCompany:
+      type: integer
+      minimum: 1
+      nullable: true
+
+RegisterEnvelope:
+  type: object
+  additionalProperties: false
+  required: [message, result]
+  properties:
+    message:
+      type: string
+      example: "User registered successfully."
+    result:
+      $ref: "#/RegisterResult"
+
+RegisterResult:
+  type: object
+  additionalProperties: false
+  required: [credential_id]
+  properties:
+    credential_id:
+      type: integer
+      minimum: 1
+    idAttendee:
+      type: integer
+      minimum: 1
+      nullable: true
+    idOrganizer:
+      type: integer
+      minimum: 1
+      nullable: true

@@ -29,7 +29,7 @@ export function validateBody(schema) {
   };
 }
 
-function validate(schema, source = "body") {
+export function validate(schema, source = "body") {
   return function (req, res, next) {
     const { value, error } = schema.validate(req[source], {
       abortEarly: false,

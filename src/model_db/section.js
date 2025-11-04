@@ -46,6 +46,13 @@ export default class section extends Model {
           { name: "section_id" },
         ]
       },
+      {
+        name: "uq_section_in_location_ci",
+        unique: true,
+        fields: [
+          { name: "event_location_id" },
+        ]
+      },
     ]
   });
   }
