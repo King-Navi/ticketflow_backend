@@ -1,5 +1,6 @@
 import { Sequelize } from "sequelize";
 import Event from "../model_db/event.js";
+import { EVENT_STATUS, EVENT_STATUS_CODE } from "../model_db/utils/eventStatus.js"
 
 // LIKE/ILIKE Postgres
 function escapeLike(raw = "") {
@@ -39,6 +40,7 @@ export default class EventRepository {
    * @param {string|null} data.end_time 'HH:MM:SS' | null
    * @param {number} data.company_id
    * @param {number} data.event_location_id
+   * @param {number} data.event_status_id
    * @param {object} [options]
    * @param {import('sequelize').Transaction} [options.transaction]
    * @returns {Promise<number>} event_id
@@ -53,9 +55,14 @@ export default class EventRepository {
       end_time = null,
       company_id,
       event_location_id,
+      event_status_id = EVENT_STATUS.DRAFT,
     },
     { transaction } = {}
   ) {
+    const finalEventStatusId =
+      typeof event_status_id === "number"
+        ? event_status_id
+        : EVENT_STATUS_CODE[String(event_status_id).toLowerCase()] ?? EVENT_STATUS.DRAFT;
     if (!event_name) throw new Error("event_name is required.");
     if (!category) throw new Error("category is required.");
     if (!description) throw new Error("description is required.");
@@ -78,6 +85,7 @@ export default class EventRepository {
           end_time,
           company_id,
           event_location_id,
+          event_status_id: finalEventStatusId,
         },
         { transaction }
       );

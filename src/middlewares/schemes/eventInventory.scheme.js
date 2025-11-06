@@ -21,6 +21,8 @@ const eventCoreSchema = Joi.object({
 
   company_id: Joi.number().integer().positive().required(),
   event_location_id: Joi.number().integer().positive().required(),
+
+  event_status_id: Joi.number().integer().positive().optional(),
 })
   .custom((value, helpers) => {
     if (value.end_time === undefined || value.end_time === null) return value;

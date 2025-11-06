@@ -1,4 +1,3 @@
-
 // Hardcoded IDs based on the exact seed order.
 // Make sure your SQL seed inserts in this order with an empty table:
 // 1. draft, 2. scheduled, 3. on_sale, 4. paused,

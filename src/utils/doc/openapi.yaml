@@ -60,13 +60,22 @@ components:
       $ref: "./schemas/auth.yaml#/LoginResponse"
     Error:
       $ref: "./schemas/common.yaml#/Error"
-    Event: { $ref: "./schemas/event.yaml#/Event" }
-    EventCreateRequest: { $ref: "./schemas/event.yaml#/EventCreateRequest" }
-    EventListResponse: { $ref: "./schemas/event.yaml#/EventListResponse" }
+
+    Event:
+      $ref: "./schemas/event.yaml#/Event"
+    EventCreateRequest:
+      $ref: "./schemas/event.yaml#/EventCreateRequest"
+    EventListResponse:
+      $ref: "./schemas/event.yaml#/EventListResponse"
+
     EventLocation:
       $ref: "./schemas/eventLocation.yaml#/EventLocation"
-    UpdateOrganizerRequest: { $ref: "./schemas/organizer.yaml#/UpdateOrganizerRequest" }
-    UpdateOrganizerResponse: { $ref: "./schemas/organizer.yaml#/UpdateOrganizerResponse" }
+
+    UpdateOrganizerRequest:
+      $ref: "./schemas/organizer.yaml#/UpdateOrganizerRequest"
+    UpdateOrganizerResponse:
+      $ref: "./schemas/organizer.yaml#/UpdateOrganizerResponse"
+
     EventLocationFullLayoutResponse:
       $ref: "./schemas/eventLocation.layout.yaml#/EventLocationFullLayoutResponse"
     EventLocationAddress:
@@ -75,6 +84,7 @@ components:
       $ref: "./schemas/eventLocation.layout.yaml#/EventLocationSection"
     EventLocationSeat:
       $ref: "./schemas/eventLocation.layout.yaml#/EventLocationSeat"
+
     EventWithInventoryCreateRequest:
       $ref: "./schemas/eventseats.yaml#/EventWithInventoryCreateRequest"
     EventWithInventoryCreateResponse:
@@ -87,13 +97,16 @@ components:
       $ref: "./schemas/eventseats.yaml#/InventoryCreatedItem"
     Counts:
       $ref: "./schemas/eventseats.yaml#/Counts"
+
     RegisterRequest:
       $ref: "./schemas/authRegister.yaml#/RegisterRequest"
     RegisterEnvelope:
       $ref: "./schemas/authRegister.yaml#/RegisterEnvelope"
     RegisterResult:
       $ref: "./schemas/authRegister.yaml#/RegisterResult"
+
     EventImageUploadResponse:
       $ref: "./schemas/event-image.yaml#/EventImageUploadResponse"
+
     PasswordForgotRequest:
       $ref: "./schemas/auth-password.yaml#/PasswordForgotRequest"

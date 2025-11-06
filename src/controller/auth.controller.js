@@ -1,3 +1,4 @@
+import { sendEmail } from "../messaging/emailService.js";
 import {
     requestPasswordResetService,
     validatePasswordResetTokenService,
@@ -15,6 +16,7 @@ export async function passwordForgotController(req, res) {
         if (process.env.DEBUG === "true") {
             console.log(result)
         }
+        await sendEmail({subject: "Your token", to: email, text: result.rawToken})
         return res.status(200).json({
             message: "If the email exists, a password reset link will be sent.",
         });

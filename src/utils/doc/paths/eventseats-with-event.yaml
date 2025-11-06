@@ -5,6 +5,8 @@ put:
   description: >
     Creates a new event and clones the selected physical seats into the event-specific inventory
     (`event_seat`) in a single atomic transaction. If any insertion fails, the entire operation is rolled back.
+    If `event.event_status_id` is omitted, the backend will default it to the "draft" status (ID = 1),
+    which must match the seeded order in the `event_status` table.
   security:
     - bearerAuth: []
   requestBody:
@@ -30,14 +32,22 @@ put:
                   base_price: 1500.00
                   status: "available"
                   category_label: "VIP"
-                - seat_id: 502
-                  base_price: 1500.00
+          with_status:
+            value:
+              event:
+                event_name: "Tech Conference"
+                category: "Conference"
+                description: "Day-long event."
+                event_date: "2025-10-14"
+                start_time: "09:00:00"
+                end_time: "17:00:00"
+                company_id: 3
+                event_location_id: 15
+                event_status_id: 3
+              inventory:
+                - seat_id: 10
+                  base_price: 500.00
                   status: "available"
-                  category_label: "VIP"
-                - seat_id: 560
-                  base_price: 800.00
-                  status: "available"
-                  category_label: "General Floor"
   responses:
     "201":
       description: Event and inventory successfully created.
@@ -50,6 +60,7 @@ put:
               value:
                 event_id: 1234
                 event_location_id: 42
+                event_status_id: 1
                 inventory_created:
                   - event_seat_id: 9001
                     seat_id: 501
@@ -66,7 +77,6 @@ put:
                 counts:
                   requested: 3
                   created: 3
-
     "400":
       description: Validation error (body invalid or business rule failure).
       content:
@@ -83,53 +93,33 @@ put:
             invalid_status:
               value:
                 msg: "Invalid seat status: 'foo'."
-
     "401":
       description: Unauthorized (missing or invalid token).
       content:
         application/json:
           schema:
             $ref: "../schemas/common.yaml#/Error"
-          examples:
-            unauthorized:
-              value: { msg: "Unauthorized" }
-
     "403":
       description: Forbidden (requires organizer or admin role).
       content:
         application/json:
           schema:
             $ref: "../schemas/common.yaml#/Error"
-          examples:
-            forbidden:
-              value: { msg: "Forbidden" }
-
     "409":
       description: Conflict (database constraint error, e.g., duplicate (event_id, seat_id) or FK violation).
       content:
         application/json:
           schema:
             $ref: "../schemas/common.yaml#/Error"
-          examples:
-            conflict:
-              value: { msg: "Database error occurred." }
-
     "503":
       description: Database connection error.
       content:
         application/json:
           schema:
             $ref: "../schemas/common.yaml#/Error"
-          examples:
-            db_down:
-              value: { msg: "Cannot connect to the database." }
-
     "500":
       description: Unexpected server error.
       content:
         application/json:
           schema:
             $ref: "../schemas/common.yaml#/Error"
-          examples:
-            server_error:
-              value: { msg: "Error" }

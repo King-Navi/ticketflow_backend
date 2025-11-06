@@ -101,6 +101,12 @@ export function authRequired(options = {}) {
       }
 
       const payload = jwt.verify(token, process.env.JWT_SECRET, { algorithms, clockTolerance });
+      if (process.env.DEBUG === "true") {
+        console.log("=== AUTH DEBUG ===");
+        console.log("Bearer token:", token);
+        console.log("JWT payload:", payload);
+        console.log("=======END===========");
+      }
       attachUser(req, res, payload);
 
       if (Array.isArray(roles) && roles.length > 0) {
