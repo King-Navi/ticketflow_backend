@@ -6,6 +6,8 @@ post:
     Crea una reserva (hold) para un `event_seat` de un evento que esté en venta.
     Valida que el evento exista y esté `on_sale`, que el asiento pertenezca al evento,
     que no haya una reserva activa/no expirada y que no exista un ticket bloqueante.
+    La expiración real se limita a un máximo de 15 minutos desde la creación,
+    aunque el cliente envíe un valor mayor.
   security:
     - bearerAuth: []
   requestBody:
@@ -17,18 +19,12 @@ post:
           additionalProperties: false
           required:
             - event_id
-            - attendee_id
             - event_seat_id
-            - expiration_at
           properties:
             event_id:
               type: integer
               minimum: 1
               example: 42
-            attendee_id:
-              type: integer
-              minimum: 1
-              example: 101
             event_seat_id:
               type: integer
               minimum: 1
@@ -36,6 +32,9 @@ post:
             expiration_at:
               type: string
               format: date-time
+              description: >
+                Opcional. Si se envía más de 15 minutos en el futuro,
+                el servidor la recortará a 15 minutos desde ahora.
               example: "2025-11-06T15:30:00Z"
   responses:
     "201":

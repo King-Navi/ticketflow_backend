@@ -3,7 +3,11 @@ import { BadRequest, Conflict, NotFound } from "../utils/errors/error.400.js";
 
 export async function createReservationController(req, res) {
   try {
-    const { event_id, attendee_id, event_seat_id, expiration_at } = req.body || {};
+    const attendee_id = req.user?.id;
+    if (!attendee_id) {
+      return res.status(401).json({ msg: "Missing attendee in token." });
+    }
+    const { event_id, event_seat_id, expiration_at } = req.body || {};
 
     const result = await createReservationService(
       event_id,
@@ -18,6 +22,7 @@ export async function createReservationController(req, res) {
     return res.status(201).json(result);
 
   } catch (err) {
+    console.log(err)
     if (err instanceof BadRequest) {
       return res.status(400).json({ msg: err.message });
     }

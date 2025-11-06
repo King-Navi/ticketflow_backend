@@ -14,6 +14,7 @@ import eventSeatRoute from './routes/eventSeat.route.js'
 import locationRoute from './routes/locations.route.js'
 import loginRoute from './routes/login.route.js'
 import organizerRoute from './routes/organizer.route.js'
+import reserveRoute from './routes/reservation.route.js'
 import userRoute from './routes/user.route.js'
 import { initDatabase } from './config/initPostgre.js';
 import { fileURLToPath } from "url";
@@ -50,6 +51,7 @@ app.use(eventSeatRoute);
 app.use(locationRoute);
 app.use(loginRoute);
 app.use(organizerRoute);
+app.use(reserveRoute);
 app.use(userRoute);
 
 // ... rutes
