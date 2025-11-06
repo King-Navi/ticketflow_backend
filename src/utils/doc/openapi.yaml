@@ -46,6 +46,8 @@ paths:
     $ref: "./paths/location-layout.yaml"
   /v1/organizer/edit:
     $ref: "./paths/organizer-update.yaml"
+  /v1/reservations/reserve:
+    $ref: "./paths/reservations-create.yaml"
   
 components:
   securitySchemes:
