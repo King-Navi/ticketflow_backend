@@ -23,6 +23,14 @@ class Unauthorized extends Error {
   }
 }
 
+class Conflict extends Error {
+  constructor(message = "Request conflicts with the current state of the resource") {
+    super(message);
+    this.name = "Conflict";
+    this.code = 409;
+  }
+}
+
 class Teapot extends Error {
   constructor(message = "I’m a teapot") {
     super(message);
@@ -31,4 +39,4 @@ class Teapot extends Error {
   }
 }
 
-export { BadRequest, NotFound, Unauthorized, Teapot };
+export { BadRequest, NotFound, Unauthorized,Conflict, Teapot };

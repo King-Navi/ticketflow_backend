@@ -1,5 +1,7 @@
 import { Sequelize } from "sequelize";
 import Event from "../model_db/event.js";
+import { EVENT_STATUS } from "../model_db/utils/eventStatus.js";
+
 
 // LIKE/ILIKE Postgres
 function escapeLike(raw = "") {
@@ -447,6 +449,158 @@ export default class EventRepository {
       }
       throw error;
     }
+  }
+
+
+  /**
+   * Ensure that an event exists and its status is in the allowed list.
+   *
+   * @param {number} eventId
+   * @param {number[]} allowedStatusIds
+   * @param {object} [options]
+   * @param {import('sequelize').Transaction} [options.transaction]
+   * @returns {Promise<object>} the event plain object
+   * @throws {Error} if event does not exist or status is not allowed
+   */
+  async ensureEventInStatuses(eventId, allowedStatusIds = [], { transaction } = {}) {
+    if (!eventId) {
+      throw new Error("eventId is required.");
+    }
+    if (!Array.isArray(allowedStatusIds) || allowedStatusIds.length === 0) {
+      throw new Error("allowedStatusIds must be a non-empty array.");
+    }
+
+    try {
+      const event = await this.model.findByPk(eventId, { transaction });
+
+      if (!event) {
+        const err = new Error("Event not found.");
+        err.code = "EVENT_NOT_FOUND";
+        err.statusCode = 404;
+        throw err;
+      }
+
+      const currentStatusId = event.event_status_id;
+
+      if (!allowedStatusIds.includes(currentStatusId)) {
+        const err = new Error("Event status is not allowed for this operation.");
+        err.code = "EVENT_STATUS_NOT_ALLOWED";
+        err.statusCode = 409;
+        err.meta = {
+          eventId,
+          currentStatusId,
+          allowedStatusIds,
+        };
+        throw err;
+      }
+
+      return event.get({ plain: true });
+    } catch (error) {
+      if (error instanceof Sequelize.ConnectionError) {
+        throw new Error("Cannot connect to the database.");
+      }
+      if (error instanceof Sequelize.DatabaseError) {
+        throw new Error("Database error occurred.");
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Ensure the event is ON SALE.
+   *
+   * @param {number} eventId
+   * @param {object} [options]
+   * @param {import('sequelize').Transaction} [options.transaction]
+   * @returns {Promise<object>} event plain object
+   */
+  async ensureEventIsOnSale(eventId, { transaction } = {}) {
+    return this.ensureEventInStatuses(
+      eventId,
+      [EVENT_STATUS.ON_SALE],
+      { transaction }
+    );
+  }
+
+  /**
+   * Ensure the event is editable (draft or edit_lock).
+   *
+   * @param {number} eventId
+   * @param {object} [options]
+   * @param {import('sequelize').Transaction} [options.transaction]
+   */
+  async ensureEventIsEditable(eventId, { transaction } = {}) {
+    return this.ensureEventInStatuses(
+      eventId,
+      [EVENT_STATUS.DRAFT, EVENT_STATUS.EDIT_LOCK],
+      { transaction }
+    );
+  }
+
+   /**
+   * Update only the status of an event.
+   *
+   * @param {number} eventId
+   * @param {number} newStatusId
+   * @param {object} [options]
+   * @param {import('sequelize').Transaction} [options.transaction]
+   * @returns {Promise<object>} updated event (plain)
+   */
+  async updateEventStatus(eventId, newStatusId, { transaction } = {}) {
+    if (!eventId) {
+      throw new Error("eventId is required.");
+    }
+    if (!newStatusId) {
+      throw new Error("newStatusId is required.");
+    }
+
+    const validStatusIds = Object.values(EVENT_STATUS);
+    if (!validStatusIds.includes(newStatusId)) {
+      const err = new Error("Invalid event status id.");
+      err.code = "INVALID_EVENT_STATUS";
+      err.statusCode = 400;
+      throw err;
+    }
+
+    try {
+      const event = await this.model.findByPk(eventId, { transaction });
+      if (!event) {
+        const err = new Error("Event not found.");
+        err.code = "EVENT_NOT_FOUND";
+        err.statusCode = 404;
+        throw err;
+      }
+      event.event_status_id = newStatusId;
+      event.updated_at = new Date();
+
+      await event.save({ transaction });
+
+      return event.get({ plain: true });
+    } catch (error) {
+      if (error instanceof Sequelize.ConnectionError) {
+        throw new Error("Cannot connect to the database.");
+      }
+      if (error instanceof Sequelize.DatabaseError) {
+        throw new Error("Database error occurred.");
+      }
+      throw error;
+    }
+  }
+
+  async setEventOnSale(eventId, { transaction } = {}) {
+    return this.updateEventStatus(eventId, EVENT_STATUS.ON_SALE, { transaction });
+  }
+
+  async setEventPaused(eventId, { transaction } = {}) {
+    return this.updateEventStatus(eventId, EVENT_STATUS.PAUSED, { transaction });
+  }
+
+  async setEventClosed(eventId, { transaction } = {}) {
+    return this.updateEventStatus(eventId, EVENT_STATUS.CLOSED, { transaction });
+  }
+
+  async cancelEvent(eventId, { transaction } = {}) {
+    return this.updateEventStatus(eventId, EVENT_STATUS.CANCELED, { transaction });
   }
 
 
