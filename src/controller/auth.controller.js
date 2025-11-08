@@ -4,6 +4,7 @@ import {
     validatePasswordResetTokenService,
     performPasswordResetService,
 } from "../service/passwordReset.service.js";
+import { NotFound, BadRequest } from "../utils/errors/error.400.js";
 
 
 export async function passwordForgotController(req, res) {
@@ -21,7 +22,13 @@ export async function passwordForgotController(req, res) {
             message: "If the email exists, a password reset link will be sent.",
         });
     } catch (error) {
-        console.error("passwordForgotController error:", error);
+        if (error instanceof BadRequest) {
+            return res.status(error.code).json({ message: error.message });
+        }
+        if (error instanceof NotFound) {
+            return res.status(error.code).json({ message: error.message });
+        }
+                console.log(error);
         return res.status(500).json({
             message: "Error requesting password reset.",
         });
@@ -48,6 +55,12 @@ export async function passwordResetValidateController(req, res) {
             password_reset_token_id: info.password_reset_token_id,
         });
     } catch (error) {
+        if (error instanceof BadRequest) {
+            return res.status(error.code).json({ message: error.message });
+        }
+        if (error instanceof NotFound) {
+            return res.status(error.code).json({ message: error.message });
+        }
         return res.status(500).json({
             message: "Error validating password reset token.",
         });
@@ -70,9 +83,14 @@ export async function passwordResetController(req, res) {
             message: "Password updated successfully.",
         });
     } catch (error) {
-        console.error("passwordResetController error:", error);
         if (error.message === "Invalid or expired token.") {
             return res.status(400).json({ message: error.message });
+        }
+        if (error instanceof BadRequest) {
+            return res.status(error.code).json({ message: error.message });
+        }
+        if (error instanceof NotFound) {
+            return res.status(error.code).json({ message: error.message });
         }
         return res.status(500).json({
             message: "Error resetting password.",

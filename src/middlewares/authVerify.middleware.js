@@ -29,8 +29,37 @@ function extractToken(req, { cookieNames = ["token", "access_token"], allowQuery
 }
 
 function attachUser(req, res, payload) {
-  const { sub, id, email, nickname, first_name, typeUser, iat, exp } = payload || {};
-  req.user = { sub, id, email, nickname, first_name, typeUser, iat, exp };
+  const {
+    sub,
+    id,
+    email,
+    nickname,
+    first_name,
+    username,
+    typeUser,
+    role,
+    iat,
+    exp,
+    credential_id,
+  } = payload || {};
+  const normalizedCredentialId = credential_id ?? sub ?? null;
+  const normalizedProfileId = id ?? payload?.profile_id ?? null;
+  const normalizedFirstName = first_name ?? username ?? null;
+  const normalizedRole = typeof typeUser !== "undefined" ? typeUser : role;
+  req.user = {
+    ...payload,
+    sub,
+    id,
+    email,
+    nickname,
+    first_name: normalizedFirstName,
+    typeUser: normalizedRole,
+    iat,
+    exp,
+    credential_id: normalizedCredentialId,
+    profile_id: normalizedProfileId,
+    role: normalizedRole,
+  };
   res.locals.user = req.user;
 }
 

@@ -40,6 +40,8 @@ paths:
     $ref: "./paths/event-img-getall-by-id.yaml"
   /v1/eventseats/with-event:
     $ref: "./paths/eventseats-with-event.yaml"
+  /v1/eventseats/:eventId/seats:
+    $ref: "./paths/events-seats-by-event.yaml"
   /v1/location/search/all:
     $ref: "./paths/location-search-all.yaml"
   /v1/location/:eventLocationId/layout:

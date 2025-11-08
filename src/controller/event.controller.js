@@ -1,5 +1,5 @@
 import { ConflictError } from "../service/error/classes.js";
-import { editEventService, newEventService, searchCompanyEventsService } from "../service/event.service.js";
+import { editEventService, newEventService, searchCompanyEventsService, updateEventStatusService } from "../service/event.service.js";
 import { Unauthorized } from "../utils/errors/error.400.js";
 
 
@@ -25,15 +25,7 @@ export async function createEventController(req, res) {
   }
   return res.status(500).json({ message: "Error" });
 }
-//TODO:
-export async function recoverEventController(req, res) {
-  try {
-    const result = recoverEventController();
-    return res.status(201).json({ msg: "Ok" });
-  } catch (err) {
-  }
-  return res.status(500).json({ message: "Error" });
-}
+
 
 export async function editEventController(req, res) {
   try {
@@ -110,4 +102,50 @@ export async function searchCompanyEventsController(req, res) {
   } catch (err) {
   }
   return res.status(500).json({ message: "Error" });
+}
+
+export async function updateEventStatusController(req, res) {
+  try {
+    const { eventId } = req.params;
+    const { status } = req.body;
+    const organizerCredentialId =
+      req.user?.credential_id ||
+      req.user?.sub ||
+      null;
+
+    const updated = await updateEventStatusService(
+      eventId,
+      status,
+      organizerCredentialId
+    );
+    return res.status(200).json({
+      message: "Event status updated successfully.",
+      event: updated,
+    });
+  } catch (error) {
+    if (process.env.DEBUG === "true") {
+      console.error("[updateEventStatus] ERROR ->", error);
+    }
+
+    if (error instanceof Unauthorized) {
+      return res.status(error.code ?? 401).json({ message: error.message });
+    }
+    if (error instanceof ConflictError) {
+      return res.status(error.code ?? 409).json({
+        message: error.message,
+        details: error.details ?? undefined,
+      });
+    }
+    if (error?.message === "Organizer for this credential does not exist.") {
+      return res.status(401).json({ message: error.message });
+    }
+    if (error?.message === "Event not found.") {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error?.message === "Invalid event status id.") {
+      return res.status(400).json({ message: error.message });
+    }
+
+    return res.status(500).json({ message: "Error updating event status." });
+  }
 }

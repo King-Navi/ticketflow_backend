@@ -4,7 +4,7 @@ import EventLocationRepository from "../repositories/eventLocation.repository.js
 import OrganizerRepository from "../repositories/organizer.repository.js";
 import { ConflictError } from "./error/classes.js";
 import { Unauthorized } from "../utils/errors/error.400.js";
-
+import {EVENT_STATUS_CODE} from "..//model_db/utils/eventStatus.js"
 const eventRepo = new EventRepository();
 const companyRepo = new CompanyRepository();
 const locationRepo = new EventLocationRepository();
@@ -243,4 +243,47 @@ function normalizeOptions(opts = {}) {
     order,
     include
   };
+}
+
+
+/**
+ * Cambia el estado de un evento verificando que el organizer dueño
+ * (mismo company_id) sea quien realiza la acción.
+ *
+ * @param {number|string} eventId
+ * @param {number|string} newStatus  // puede ser id numérico o string ('on_sale', 'paused', etc.)
+ * @param {number|string} organizerCredentialId
+ * @returns {Promise<object>} evento actualizado (plain)
+ *
+ * @throws {Error}
+ *  - "Organizer for this credential does not exist."
+ *  - "Event not found."
+ *  - Unauthorized si el organizer no pertenece a la compañía del evento.
+ *  - "Invalid event status id." si el status es inválido (desde el repo).
+ */
+export async function updateEventStatusService(eventId, newStatus, organizerCredentialId) {
+  if (!eventId) throw new Error("eventId is required.");
+  if (newStatus == null) throw new Error("newStatus is required.");
+  if (!organizerCredentialId) throw new Error("organizerCredentialId is required.");
+
+  const organizer = await organizerRepo.findOrganizerByCredentialId(organizerCredentialId);
+  if (!organizer) {
+    throw new Error("Organizer for this credential does not exist.");
+  }
+
+  const existingEvent = await eventRepo.findById(eventId);
+  if (!existingEvent) {
+    throw new Error("Event not found.");
+  }
+  if (Number(organizer.company_id) !== Number(existingEvent.company_id)) {
+    throw new Unauthorized("Organizer cannot change status for this event.");
+  }
+
+  const statusId = typeof newStatus === "number"
+    ? newStatus
+    : EVENT_STATUS_CODE[String(newStatus).toLowerCase()];
+
+  const updated = await eventRepo.updateEventStatus(eventId, statusId);
+
+  return updated;
 }

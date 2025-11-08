@@ -608,20 +608,4 @@ export default class EventRepository {
   async cancelEvent(eventId, { transaction } = {}) {
     return this.updateEventStatus(eventId, EVENT_STATUS.CANCELED, { transaction });
   }
-
-
-  // async findByName(name, opts = {}) {
-  //   if (!name || !String(name).trim()) throw new Error("name is required.");
-  //   return this.searchOneFilter({ ...opts, name, date: undefined, category: undefined });
-  // }
-
-  // async findByDate(date, opts = {}) {
-  //   if (!date || !String(date).trim?.()) throw new Error("date is required.");
-  //   return this.searchOneFilter({ ...opts, name: undefined, date, category: undefined });
-  // }
-
-  // async findByCategory(category, opts = {}) {
-  //   if (!category || !String(category).trim()) throw new Error("category is required.");
-  //   return this.searchOneFilter({ ...opts, name: undefined, date: undefined, category });
-  // }
 }

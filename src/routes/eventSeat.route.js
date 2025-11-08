@@ -2,6 +2,8 @@ import express from 'express'
 import {authRequired, requireRole} from '../middlewares/authVerify.middleware.js'
 import { ROLE } from '../model_db/utils/role.js';
 import { createEventWithInventoryController } from '../controller/eventInventory.controller.js';
+import { getEventSeatsByEventIdController } from '../controller/eventSeat.controller.js';
+import { validateEventIdParam } from '../middlewares/validateIdParams.middleware.js';
 
 const router = express.Router();
 
@@ -15,5 +17,12 @@ router.put(
   createEventWithInventoryController
 );
 
+
+router.get(
+  `${EVENTSEAT_ROUTE}/:eventId/seats`,
+  authRequired(),
+  validateEventIdParam,
+  getEventSeatsByEventIdController
+);
 
 export default router;

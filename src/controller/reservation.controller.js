@@ -22,7 +22,9 @@ export async function createReservationController(req, res) {
     return res.status(201).json(result);
 
   } catch (err) {
-    console.log(err)
+    if (process.env.DEBUG === "ture"){
+      console.log(err);
+    }    
     if (err instanceof BadRequest) {
       return res.status(400).json({ msg: err.message });
     }

@@ -257,6 +257,36 @@ export default class EventSeatRepository {
       throw error;
     }
   }
+  /**
+   * Get all event_seats for a given event_id
+   *
+   * @param {number} eventId
+   * @param {{transaction?: import("sequelize").Transaction}} [options]
+   * @returns {Promise<Array<object>>}
+   */
+  async findAllByEventId(eventId, { transaction } = {}) {
+    if (!eventId) {
+      throw new BadRequest("eventId is required.");
+    }
+
+    try {
+      const rows = await this.model.findAll({
+        where: { event_id: eventId },
+        order: [["event_seat_id", "ASC"]],
+        transaction,
+      });
+
+      return rows.map(r => r.get({ plain: true }));
+    } catch (error) {
+      if (error instanceof Sequelize.ConnectionError) {
+        throw new Error("Cannot connect to the database.");
+      }
+      if (error instanceof Sequelize.DatabaseError) {
+        throw new Error("Database error occurred.");
+      }
+      throw error;
+    }
+  }
 
 
 }
