@@ -1,15 +1,16 @@
 get:
   tags: [Event]
   operationId: searchEvents
-  summary: Busca eventos por NOMBRE, FECHA o CATEGORÍA (exactamente uno)
+  summary: Busca eventos por NOMBRE, FECHA, CATEGORÍA o STATUS (exactamente uno)
   description: >
     Búsqueda global de eventos filtrando por **un solo** criterio:
-    `name` (coincidencia parcial, case-insensitive), `date` (YYYY-MM-DD) **o**
-    `category` (coincidencia exacta). Si se envían varios o ninguno, retorna 400.
+    `name` (coincidencia parcial, case-insensitive), `date` (YYYY-MM-DD),
+    `category` (coincidencia exacta) **o** `status` (puede ser id numérico o código, ej. `on_sale`).
+    Si se envían varios o ninguno, retorna 400.
   parameters:
     - in: query
       name: name
-      description: Substring del nombre del evento (case-insensitive). No combinar con `date` ni `category`.
+      description: Substring del nombre del evento (case-insensitive). No combinar con `date`, `category` ni `status`.
       required: false
       schema: { type: string, maxLength: 200 }
       examples:
@@ -17,17 +18,19 @@ get:
           value: "meetup"
         exacto:
           value: "Annual Dev Conference"
+
     - in: query
       name: date
-      description: Fecha exacta del evento (YYYY-MM-DD). No combinar con `name` ni `category`.
+      description: Fecha exacta del evento (YYYY-MM-DD). No combinar con `name`, `category` ni `status`.
       required: false
       schema: { type: string, format: date }
       examples:
         ejemplo:
           value: "2025-03-10"
+
     - in: query
       name: category
-      description: Categoría exacta del evento. No combinar con `name` ni `date`.
+      description: Categoría exacta del evento. No combinar con `name`, `date` ni `status`.
       required: false
       schema: { type: string, maxLength: 100 }
       examples:
@@ -35,13 +38,34 @@ get:
           value: "Technology"
 
     - in: query
+      name: status
+      description: >
+        Estado del evento. Acepta el **id numérico** (`event_status_id`) o el **código en minúsculas**
+        definido en el catálogo (`draft`, `scheduled`, `on_sale`, `paused`, `edit_lock`, `closed`, `completed`, `canceled`).
+        No combinar con `name`, `date` ni `category`.
+      required: false
+      schema:
+        oneOf:
+          - type: integer
+            minimum: 1
+          - type: string
+            maxLength: 50
+      examples:
+        porCodigo:
+          value: "on_sale"
+        porId:
+          value: 30
+
+    - in: query
       name: limit
       required: false
       schema: { type: integer, minimum: 1, maximum: 500, default: 50 }
+
     - in: query
       name: offset
       required: false
       schema: { type: integer, minimum: 0, default: 0 }
+
     - in: query
       name: orderBy
       required: false
@@ -49,6 +73,7 @@ get:
         type: string
         enum: [event_date, start_time, created_at]
         default: event_date
+
     - in: query
       name: orderDir
       required: false
@@ -56,6 +81,7 @@ get:
         type: string
         enum: [ASC, DESC]
         default: ASC
+
     - in: query
       name: full
       required: false
@@ -129,6 +155,21 @@ get:
                     event_location_id: 9
                     created_at: "2025-08-01T12:00:00.000Z"
                     updated_at: "2025-08-01T12:00:00.000Z"
+            porStatus:
+              summary: Búsqueda por status
+              value:
+                count: 3
+                rows:
+                  - event_id: 300
+                    event_name: "Summer Festival"
+                    category: "Festival"
+                    description: "Music & food"
+                    event_date: "2025-07-15"
+                    start_time: "16:00:00"
+                    end_time: "23:00:00"
+                    company_id: 2
+                    event_location_id: 10
+                    event_status_id: 30
     "400":
       description: Error de validación (regla de un filtro o formato inválido)
       content:
@@ -137,8 +178,10 @@ get:
             $ref: "../schemas/common.yaml#/Error"
           examples:
             xor:
-              value: { message: "Exactly one of 'name', 'date' or 'category' must be provided." }
+              value: { message: "Exactly one of 'name', 'date', 'category' or 'status' must be provided." }
             fecha:
               value: { message: "date must be an ISO date or 'YYYY-MM-DD'." }
+            statusInvalido:
+              value: { message: "Invalid event status filter." }
   security:
     - bearerAuth: []

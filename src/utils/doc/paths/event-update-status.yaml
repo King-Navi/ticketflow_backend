@@ -1,0 +1,151 @@
+put:
+  summary: Update event status
+  description: >
+    Updates the status of an event. Only the organizer (from the same company as the event)
+    or an admin can change the status. The organizer is taken from the authenticated user
+    (req.user.credential_id or req.user.sub).
+  tags:
+    - Event
+  security:
+    - bearerAuth: []
+  parameters:
+    - name: eventId
+      in: path
+      required: true
+      description: Event identifier
+      schema:
+        type: integer
+  requestBody:
+    required: true
+    description: New status for the event. It can be a numeric status id or a string code.
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - status
+          properties:
+            status:
+              oneOf:
+                - type: integer
+                  description: Numeric status id
+                  example: 2
+                - type: string
+                  description: Status code
+                  example: on_sale
+  responses:
+    "200":
+      description: Event status updated successfully
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: Event status updated successfully.
+              event:
+                $ref: "#/components/schemas/Event"
+    "400":
+      description: Bad request (invalid status or body)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    "401":
+      description: Unauthorized (missing/invalid token or organizer not found)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    "403":
+      description: Forbidden (role not allowed)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    "404":
+      description: Event not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    "409":
+      description: Conflict (conflict from service/repo)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: This location is already booked for that time range.
+              details:
+                type: object
+                additionalProperties: true
+    "500":
+      description: Server error updating event status
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Event:
+      type: object
+      description: Event object returned after updating status.
+      properties:
+        id:
+          type: integer
+          example: 42
+        event_name:
+          type: string
+          example: "Node.js Meetup"
+        category:
+          type: string
+          example: "meetup"
+        description:
+          type: string
+          nullable: true
+        event_date:
+          type: string
+          format: date
+          example: "2025-11-15"
+        start_time:
+          type: string
+          example: "19:00:00"
+        end_time:
+          type: string
+          nullable: true
+          example: "21:00:00"
+        company_id:
+          type: integer
+          example: 3
+        event_location_id:
+          type: integer
+          example: 7
+        status_id:
+          type: integer
+          example: 2
+      required:
+        - id
+        - event_name
+        - event_date
+        - start_time
+        - company_id
+        - event_location_id
+        - status_id
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Error updating event status.

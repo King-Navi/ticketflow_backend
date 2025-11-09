@@ -36,6 +36,8 @@ paths:
     $ref: "./paths/events-edit.yaml"
   /v1/event/img/:eventId/new:
     $ref: "./paths/event-upload-image.yaml"
+  /v1/event/:eventId/status:
+    $ref: "./paths/event-update-status.yaml"
   /v1/event/img/:eventId/images:
     $ref: "./paths/event-img-getall-by-id.yaml"
   /v1/eventseats/with-event:

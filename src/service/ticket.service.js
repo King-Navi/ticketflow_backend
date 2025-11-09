@@ -1,69 +1,267 @@
+import EventSeatRepository from "../repositories/eventSeat.repository.js";
+import EventRepository from "../repositories/event.repository.js";
+import ReservationRepository from "../repositories/reservation.repository.js";
+import TicketRepository from "../repositories/ticket.repository.js";
+import {
+    EVENT_SEAT_STATUS,
+    EVENT_SEAT_STATUS_CODE
+} from "../model_db/utils/eventSeatStatus.js"
+import { BadRequest, Conflict, NotFound } from "../utils/errors/error.400.js";
+import { sequelizeCon } from "../config/initPostgre.js";
+import { RESERVATION_STATUS, isValidReservationStatus } from "../model_db/utils/reservationStatus.js";
+import Stripe from "stripe";
+
+let stripe;
+let endpointSecret;
+if (process.env.DEBUG === "true") {
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY_DEV);
+    endpointSecret = process.env.STRIPE_WEBHOOK_SECRET_DEV;
+} else {
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+}
+
+const TAX_PERCENTAGE = 16;
+
+export async function buyTicketService(
+    event_seat_id,
+    attendee_id,
+    { holdMinutes = 5 } = {}
+) {
+    if (!event_seat_id) {
+        throw new BadRequest("event_seat_id is required.");
+    }
+    if (!attendee_id) {
+        throw new BadRequest("attendee_id is required.");
+    }
+    const seatIds = Array.isArray(event_seat_id)
+        ? event_seat_id
+        : [event_seat_id];
+    if (seatIds.length === 0) {
+        throw new BadRequest("At least one event_seat_id is required.");
+    }
+    let seats = [];
+    let reservations = [];
+    let eventId = null;
+    let subtotal = 0;
+    let tax_amount = 0;
+    let total_amount = 0;
+    let ticket_quantity = 0;
+    const tx = await sequelizeCon.transaction();
+    try {
+        const eventSeatRepo = new EventSeatRepository();
+        const eventRepo = new EventRepository();
+        const reservationRepo = new ReservationRepository();
+        const ticketRepo = new TicketRepository();
+        const seats = [];
+        for (const seatId of seatIds) {
+            const seat = await eventSeatRepo.findById(seatId, { transaction: tx });
+            if (!seat) {
+                throw new NotFound(`Event seat not found: ${seatId}`);
+            }
+            seats.push(seat);
+        }
+        eventId = seats[0].event_id;
+        for (const seat of seats) {
+            if (seat.event_id !== eventId) {
+                const err = new Conflict("All seats must belong to the same event.");
+                err.meta = {
+                    expected_event_id: eventId,
+                    seat_event_id: seat.event_id,
+                    seat_id: seat.event_seat_id,
+                };
+                throw err;
+            }
+            await eventSeatRepo.ensureEventSeatBelongsToEvent(
+                eventId,
+                seat.event_seat_id, {
+                transaction: tx,
+            });
+        }
+
+        await eventRepo.ensureEventIsOnSale(eventId, { transaction: tx });
+        const collectedReservations = [];
+
+        for (const seat of seats) {
+            if (seat.event_seat_status_id !== EVENT_SEAT_STATUS.RESERVED) {
+                const err = new Conflict("Seat is not reserved. Purchase is not allowed.");
+                err.meta = {
+                    seat_id: seat.event_seat_id,
+                    current_status_id: seat.event_seat_status_id,
+                    required_status_id: EVENT_SEAT_STATUS.RESERVED,
+                };
+                throw err;
+            }
+
+            const tickets = await ticketRepo.findAllByEventSeatId(seat.event_seat_id, {
+                transaction: tx,
+            });
+            if (tickets.length > 0) {
+                const blocking = tickets.find((t) =>
+                    ticketRepo.isBlockingStatus(t.ticket_status_id)
+                );
+                if (blocking) {
+                    const err = new Conflict("This seat already has a blocking ticket.");
+                    err.meta = {
+                        seat_id: seat.event_seat_id,
+                        ticket_id: blocking.ticket_id,
+                        ticket_status_id: blocking.ticket_status_id,
+                    };
+                    throw err;
+                }
+            }
+
+            const reservation =
+                await reservationRepo.findActiveNotExpiredBySeatAndAttendee(
+                    seat.event_seat_id,
+                    attendee_id,
+                    { transaction: tx }
+                );
+            if (!reservation) {
+                const err = new Conflict(
+                    "There is no active reservation for this seat and attendee."
+                );
+                err.meta = {
+                    seat_id: seat.event_seat_id,
+                    attendee_id,
+                };
+                throw err;
+            }
+            collectedReservations.push(reservation);
+        }
+
+        reservations = collectedReservations;
+        subtotal = seats
+            .map((s) => Number(s.base_price))
+            .reduce((acc, n) => acc + n, 0);
+        const taxAmountRaw = subtotal * (TAX_PERCENTAGE / 100);
+        tax_amount = Number(taxAmountRaw.toFixed(2));
+        total_amount = Number((subtotal + tax_amount).toFixed(2));
+        ticket_quantity = seats.length;
+
+        await tx.commit();
+    } catch (err) {
+        await tx.rollback();
+        throw err;
+    }
+
+    const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(total_amount * 100),
+        currency: "mxn",
+        metadata: {
+            attendee_id: String(attendee_id),
+            event_id: String(eventId),
+            seat_ids: seats.map((s) => s.event_seat_id).join(","),
+            subtotal: subtotal.toFixed(2),
+            tax_amount: tax_amount.toFixed(2),
+        },
+        automatic_payment_methods: {
+            enabled: true,
+            allow_redirects: "never",
+        },
+    });
+
+    if (process.env.DEBUG === "true") {
+        console.log("======ID_PAYMENT======");
+        console.log(paymentIntent.id);
+        console.log("======END_ID_PAYMENT======");
+    }
+
+    return {
+        ok: true,
+        step: "stripe-payment-intent-created",
+        stripe_client_secret: paymentIntent.client_secret,
+        payment_snapshot: {
+            subtotal: Number(subtotal.toFixed(2)),
+            tax_percentage: TAX_PERCENTAGE,
+            tax_amount,
+            total_amount,
+            ticket_quantity,
+        },
+        seats: seats.map((s) => ({
+            id: s.event_seat_id,
+            price: Number(s.base_price),
+        })),
+        reservations: reservations.map((r) => ({
+            id: r.reservation_id,
+            seat_id: r.event_seat_id,
+            expires_at: r.expiration_at,
+        })),
+    };
+}
 
 
-export function buyTicketService(event_seat_id, attendee_id) {
-    // 1. Obtener el asiento del evento (event_seat) + su evento
-    //    - traer event_seat por id
-    //    - join al event para saber su estado y fecha/hora
+export async function finalizeTicketPurchaseFromStripe(paymentIntent) {
+    const metadata = paymentIntent.metadata || {};
+    const attendeeId = Number(metadata.attendee_id);
+    const eventId = Number(metadata.event_id);
+    const seatIds = (metadata.seat_ids || "")
+        .split(",")
+        .map(s => Number(s))
+        .filter(Boolean);
 
-    // 2. Validar que el evento esté en fase de venta (event.status = 'on_sale')
-    //    - si no, cortar
+    const subtotal = Number(metadata.subtotal);
+    const tax_amount = Number(metadata.tax_amount);
+    const total_amount = paymentIntent.amount_received
+        ? paymentIntent.amount_received / 100
+        : Number(metadata.total_amount);
+    const ticket_quantity = seatIds.length;
 
-    // 3. Validar que el asiento pertenece a ese evento y que NO esté vendido/bloqueado
-    //    - revisar event_seat_status: debe ser 'available' o 'reserved' PARA este usuario
+    const tx = await sequelizeCon.transaction();
+    try {
+        //TODO.: ver si va aqui y si es necesario
+        const paymentRepo = new PaymentRepository();
+        const ticketRepo = new TicketRepository();
+        const eventSeatRepo = new EventSeatRepository();
+        const reservationRepo = new ReservationRepository();
 
-    // 4. Buscar si existe una reserva para este event_seat
-    //    - reservation WHERE event_seat_id = ? AND status = 'active'
-    //    - puede no existir (compra directa) o sí existir
+        // 1. crear payment TODO :
+        const paymentId = await paymentRepo.createPayment({
+            subtotal,
+            tax_percentage: 16,
+            tax_amount,
+            total_amount,
+            ticket_quantity,
+            attendee_id: attendeeId,
+            // payment_method_id: ... (depende de tu modelo),
+            // puedes guardar el paymentIntent.id en una columna extra
+            stripe_payment_intent_id: paymentIntent.id,
+        }, { transaction: tx });
 
-    // 5. Si existe reserva:
-    //    5.1 validar que no esté expirada (expiration_at > now)
-    //    5.2 validar que el attendee_id de la reserva sea el mismo que quiere comprar
-    //    5.3 opcional: validar que el asiento esté en estado 'reserved'
-    //    si falla algo de esto → no dejar comprar
+        // 2. por cada seat: marcar reserva como converted y crear ticket
+        for (const seatId of seatIds) {
+            // traer la reserva activa de ese seat para este attendee
+            const reservation = await reservationRepo.findActiveNotExpiredBySeatAndAttendee(
+                seatId,
+                attendeeId,
+                { transaction: tx }
+            );
 
-    // 6. Si NO existe reserva:
-    //    - (opcional según tu flujo) crear una reserva rápida para este attendee y asiento
-    //    - marcar asiento como 'reserved'
-    //    Esto asegura que mientras cobras nadie más se lo lleva.
+            if (reservation) {
+                // TODO: update reservation to converted
+                await reservationRepo.markConverted(reservation.reservation_id, { transaction: tx });
+            }
+            const seat = await eventSeatRepo.findById(seatId, { transaction: tx });
+            const unitPrice = Number(seat.base_price);
+            // TODO: crear ticket
+            await ticketRepo.createTicketFromSeat({
+                payment_id: paymentId,
+                event_seat_id: seatId,
+                unit_price: unitPrice,
+                ticket_status_code: "sold",
+            }, { transaction: tx });
 
-    // 7. Calcular montos a cobrar
-    //    - base_price = event_seat.base_price
-    //    - tax_percentage según tu lógica
-    //    - tax_amount y total_amount
-    //    Esto es lo que vas a guardar en payment como snapshot.
+            // marcar seat como SOLD
+            await eventSeatRepo.updateEventSeatStatus(
+                seatId,
+                EVENT_SEAT_STATUS.SOLD,
+                { transaction: tx }
+            );
+        }
 
-    // 8. Obtener/validar el método de pago del attendee
-    //    - que exista un payment_method asociado al attendee
-    //    - que esté activo
-    //    (o traer el token que te pasen en la petición)
-
-    // 9. Intentar realizar el cobro en el PSP (Stripe, etc.)
-    //    - si el cobro falla → retornar error y (opcional) liberar la reserva si la creaste aquí
-    //    - si el cobro pasa → seguir
-
-    // 10. Crear el registro de payment
-    //     - attendee_id
-    //     - payment_method_id
-    //     - reservation_id (si la había)
-    //     - subtotal, tax_percentage, tax_amount, total_amount
-    //     - ticket_quantity = 1
-
-    // 11. Actualizar la reserva (si existía) a status = 'converted'
-    //     - esto cierra el ciclo de la reserva
-    //     - también puedes actualizar event_seat_status a 'sold'
-
-    // 12. Crear el ticket
-    //     - payment_id
-    //     - event_seat_id
-    //     - seat_label (Row X Seat Y) derivado de seat
-    //     - category_label (VIP / General) derivado de section
-    //     - unit_price = el que se cobró
-    //     - ticket_status = 'sold'
-    //     - qr_code generado
-
-    // 13. Marcar el event_seat como 'sold'
-    //     - importante hacerlo aquí para que no se revenda
-
-    // 14. Retornar info del ticket / pago
-    //     - para que el frontend lo muestre o lo mande por correo
+        await tx.commit();
+    } catch (err) {
+        await tx.rollback();
+        throw err;
+    }
 }

@@ -101,22 +101,6 @@ export default class EventRepository {
     }
   }
 
-  /**
-  * Get all events for a company.
-  *
-  * @param {number} companyId
-  * @param {object} [options]
-  * @param {boolean} [options.full=false] include associations if true
-  * @param {import('sequelize').Includeable[]} [options.include] custom include
-  * @param {number} [options.limit=50]
-  * @param {number} [options.offset=0]
-  * @param {Array}  [options.order=[["event_date","ASC"],["start_time","ASC"]]]
-  * @param {string|Date} [options.dateFrom] filter by event_date >= dateFrom
-  * @param {string|Date} [options.dateTo]   filter by event_date <= dateTo
-  * @param {string|string[]} [options.category] filter by category (single or array)
-  * @param {import('sequelize').Transaction} [options.transaction]
-  * @returns {Promise<{rows: Event[], count: number}>}
-  */
   async findAllByCompanyId(
     companyId,
     {
@@ -128,6 +112,8 @@ export default class EventRepository {
       dateFrom,
       dateTo,
       category,
+      status,
+      name,
       transaction
     } = {}
   ) {
@@ -141,6 +127,40 @@ export default class EventRepository {
 
     if (category) {
       where.category = Array.isArray(category) ? { [Op.in]: category } : category;
+    }
+
+    if (name && String(name).trim() !== "") {
+      const pattern = `%${String(name).trim().replace(/[\\%_]/g, s => `\\${s}`)}%`;
+      where.event_name = { [Op.iLike]: pattern };
+    }
+
+    if (status != null) {
+      const toId = (raw) => {
+        const s = String(raw).trim();
+        if (/^\d+$/.test(s)) {
+          return Number(s);
+        }
+        const mapped = EVENT_STATUS_CODE[s.toLowerCase()];
+        return mapped ?? null;
+      };
+
+      if (Array.isArray(status)) {
+        const ids = status
+          .map(toId)
+          .filter((x) => x !== null);
+        if (ids.length > 0) {
+          where.event_status_id = { [Op.in]: ids };
+        } else {
+          where.event_status_id = -1;
+        }
+      } else {
+        const id = toId(status);
+        if (id !== null) {
+          where.event_status_id = id;
+        } else {
+          where.event_status_id = -1;
+        }
+      }
     }
 
     const includeForFull =
@@ -159,24 +179,14 @@ export default class EventRepository {
         ]
         : undefined);
 
-    try {
-      return await this.model.findAndCountAll({
-        where,
-        include: includeForFull,
-        limit,
-        offset,
-        order,
-        transaction
-      });
-    } catch (error) {
-      if (error instanceof Sequelize.ConnectionError) {
-        throw new Error("Cannot connect to the database.");
-      }
-      if (error instanceof Sequelize.DatabaseError) {
-        throw new Error("Database error occurred.");
-      }
-      throw error;
-    }
+    return this.model.findAndCountAll({
+      where,
+      include: includeForFull,
+      limit,
+      offset,
+      order,
+      transaction
+    });
   }
 
 
@@ -184,6 +194,7 @@ export default class EventRepository {
     name,
     date,
     category,
+    status,
     include,
     limit = 50,
     offset = 0,
@@ -193,11 +204,12 @@ export default class EventRepository {
     const provided = [
       name != null && String(name).trim() !== "",
       date != null && String(date).trim() !== "",
-      category != null && String(category).trim() !== ""
+      category != null && String(category).trim() !== "",
+      status != null && String(status).trim() !== ""
     ].filter(Boolean).length;
 
     if (provided !== 1) {
-      throw new Error("Exactly one of 'name', 'date' or 'category' must be provided.");
+      throw new Error("Exactly one of 'name', 'date', 'category' or 'status' must be provided.");
     }
 
     const where = {};
@@ -214,6 +226,27 @@ export default class EventRepository {
 
     if (category && String(category).trim() !== "") {
       where.category = String(category).trim();
+    }
+
+    if (status && String(status).trim() !== "") {
+      let eventStatusId = null;
+      const raw = String(status).trim();
+
+      if (/^\d+$/.test(raw)) {
+        eventStatusId = Number(raw);
+      } else {
+        const normalized = raw.toLowerCase();
+        eventStatusId = EVENT_STATUS_CODE[normalized];
+      }
+
+      if (!eventStatusId) {
+        const err = new Error("Invalid event status filter.");
+        err.code = "INVALID_EVENT_STATUS";
+        err.statusCode = 400;
+        throw err;
+      }
+
+      where.event_status_id = eventStatusId;
     }
 
     return this.model.findAndCountAll({
@@ -543,15 +576,15 @@ export default class EventRepository {
     );
   }
 
-   /**
-   * Update only the status of an event.
-   *
-   * @param {number} eventId
-   * @param {number} newStatusId
-   * @param {object} [options]
-   * @param {import('sequelize').Transaction} [options.transaction]
-   * @returns {Promise<object>} updated event (plain)
-   */
+  /**
+  * Update only the status of an event.
+  *
+  * @param {number} eventId
+  * @param {number} newStatusId
+  * @param {object} [options]
+  * @param {import('sequelize').Transaction} [options.transaction]
+  * @returns {Promise<object>} updated event (plain)
+  */
   async updateEventStatus(eventId, newStatusId, { transaction } = {}) {
     if (!eventId) {
       throw new Error("eventId is required.");

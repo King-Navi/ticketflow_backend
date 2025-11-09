@@ -23,6 +23,8 @@ export async function recoverEventsService(
     dateFrom,
     dateTo,
     category,
+    status,
+    name,
     full = false,
     orderBy = "event_date",
     orderDir = "ASC",
@@ -36,10 +38,13 @@ export async function recoverEventsService(
     dateFrom: dateFrom ?? undefined,
     dateTo: dateTo ?? undefined,
     category,
+    name: name?.toString()?.trim() || undefined,
     full: typeof full === "string" ? full.toLowerCase() === "true" : Boolean(full),
     orderBy: String(orderBy),
     orderDir: String(orderDir).toUpperCase() === "DESC" ? "DESC" : "ASC",
   };
+
+  const normStatus = status ?? undefined;
 
   const order = [[norm.orderBy, norm.orderDir]];
   if (norm.orderBy !== "start_time") {
@@ -52,6 +57,8 @@ export async function recoverEventsService(
     dateFrom: norm.dateFrom,
     dateTo: norm.dateTo,
     category: norm.category,
+    status: normStatus,
+    name: norm.name,
     full: norm.full,
     order,
   });

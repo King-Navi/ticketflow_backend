@@ -39,6 +39,27 @@ export default class TicketRepository {
     }
   }
 
+  async findAllByEventSeatId(eventSeatId, { transaction } = {}) {
+    if (!eventSeatId) {
+      throw new Error("eventSeatId is required.");
+    }
+
+    try {
+      const rows = await this.model.findAll({
+        where: { event_seat_id: eventSeatId },
+        transaction,
+      });
+      return rows.map(r => r.get({ plain: true }));
+    } catch (error) {
+      if (error instanceof Sequelize.ConnectionError) {
+        throw new Error("Cannot connect to the database.");
+      }
+      if (error instanceof Sequelize.DatabaseError) {
+        throw new Error("Database error occurred.");
+      }
+      throw error;
+    }
+  }
   /**
    * Helper: tells if a ticket status blocks a new reservation
    * (sold / checked_in)

@@ -43,6 +43,37 @@ export default class ReservationRepository {
       throw error;
     }
   }
+  async findActiveNotExpiredBySeatAndAttendee(
+    eventSeatId,
+    attendeeId,
+    { transaction } = {}
+  ) {
+    if (!eventSeatId) throw new Error("eventSeatId is required.");
+    if (!attendeeId) throw new Error("attendeeId is required.");
+
+    try {
+      const now = new Date();
+      const rec = await this.model.findOne({
+        where: {
+          event_seat_id: eventSeatId,
+          attendee_id: attendeeId,
+          status: "active",
+          expiration_at: { [Op.gt]: now },
+        },
+        transaction,
+      });
+
+      return rec ? rec.get({ plain: true }) : null;
+    } catch (error) {
+      if (error instanceof Sequelize.ConnectionError) {
+        throw new Error("Cannot connect to the database.");
+      }
+      if (error instanceof Sequelize.DatabaseError) {
+        throw new Error("Database error occurred.");
+      }
+      throw error;
+    }
+  }
 
   /**
    * Create a reservation row.

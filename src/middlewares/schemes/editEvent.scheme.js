@@ -37,9 +37,6 @@ export const editEventBodySchema = Joi.object({
     .integer()
     .positive(),
 
-  event_location_id: Joi.number()
-    .integer()
-    .positive(),
 })
   .or(
     "event_name",

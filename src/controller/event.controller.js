@@ -94,12 +94,33 @@ export async function searchCompanyEventsController(req, res) {
   try {
     const q = (res.locals?.validated?.query) ?? req.query;
 
-    const { name, date, category, limit, offset, orderBy, orderDir, full } = q;
+    const {
+      name,
+      date,
+      category,
+      status,
+      limit,
+      offset,
+      orderBy,
+      orderDir,
+      full
+    } = q;
     const { rows, count } = await searchCompanyEventsService({
-      name, date, category, limit, offset, orderBy, orderDir, include: full ? undefined : undefined
+      name,
+      date,
+      category,
+      status,
+      limit,
+      offset,
+      orderBy,
+      orderDir,
+      include: full ? undefined : undefined
     });
     return res.json({ count, rows });
   } catch (err) {
+    if(process.env.DEBUG === "true"){
+      console.error(err)
+    }
   }
   return res.status(500).json({ message: "Error" });
 }

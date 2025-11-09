@@ -24,7 +24,7 @@ router.put(
 );
 
 router.get(
-  `${EVENT_ROUTE}/events/search`,
+  `${EVENT_ROUTE}/search`,
   validateQuery(searchCompanyEventsQuerySchema),
   searchCompanyEventsController
 );
@@ -48,8 +48,6 @@ router.put(
   validateBody(updateEventStatusBodySchema),
   updateEventStatusController
 );
-
-//TODO:Recuperar evento
 
 //TODO: BorrarEvento
 

@@ -214,14 +214,26 @@ export async function editEventService(eventId, payload, organizerCredentialId) 
   }
 }
 
-export async function searchCompanyEventsService({ name, date, category, ...rest } = {}) {
-  const provided = [!!(name?.trim?.()), !!(date?.toString?.()), !!(category?.trim?.())].filter(Boolean).length;
+export async function searchCompanyEventsService({
+  name,
+  date,
+  category,
+  status,
+  ...rest
+} = {}) {
+  const provided = [
+    !!(name?.trim?.()),
+    !!(date?.toString?.()),
+    !!(category?.trim?.()),
+    !!(status ?? null)
+  ].filter(Boolean).length;
+
   if (provided !== 1) {
-    throw new Error("Exactly one of 'name', 'date' or 'category' must be provided.");
+    throw new Error("Exactly one of 'name', 'date', 'category' or 'status' must be provided.");
   }
 
   const opts = normalizeOptions(rest);
-  return eventRepo.searchOneFilter({ name, date, category, ...opts });
+  return eventRepo.searchOneFilter({ name, date, category, status, ...opts });
 }
 
 function normalizeOptions(opts = {}) {

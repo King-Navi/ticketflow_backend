@@ -22,3 +22,7 @@ build/
 out/
 
 .scannerwork/
+
+
+#Stripe
+stripe_cli/

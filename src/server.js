@@ -15,6 +15,8 @@ import locationRoute from './routes/locations.route.js'
 import loginRoute from './routes/login.route.js'
 import organizerRoute from './routes/organizer.route.js'
 import reserveRoute from './routes/reservation.route.js'
+import stripeWebhookRoute from './routes/stripeWebhook.route.js'
+import ticketRoute from './routes/ticket.route.js'
 import userRoute from './routes/user.route.js'
 import { initDatabase } from './config/initPostgre.js';
 import { fileURLToPath } from "url";
@@ -22,11 +24,22 @@ import path from "path";
 import swaggerUi from "swagger-ui-express";
 
 
+function requireEnv(name) {
+  const value = process.env[name];
+  if (!value) {
+    console.error(`[FATAL] La variable de entorno ${name} no está definida.`);
+    process.exit(1);
+  }
+  return value;
+}
+const UPLOAD_BASE = requireEnv('UPLOAD_BASE');
+const TMP_DIR = requireEnv('TMP_DIR');
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const uploadsDir = path.resolve(__dirname, "..", "uploads");
-const eventsDir = path.join(uploadsDir, "events");
+const eventsDir = path.resolve(__dirname, '..', UPLOAD_BASE);
+const tmpDir = path.resolve(__dirname, '..', TMP_DIR);
 
 const httpsPort = process.env.PORT || 3000;
 const httpPort = 6970;
@@ -38,6 +51,11 @@ app.use(cors());
 const specDir = path.join(__dirname, "utils/doc");
 const specFile = path.join(specDir, "openapi.yaml");
 
+
+/**
+ * webhook before express.json()
+ */
+app.use(stripeWebhookRoute);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -52,6 +70,7 @@ app.use(locationRoute);
 app.use(loginRoute);
 app.use(organizerRoute);
 app.use(reserveRoute);
+app.use(ticketRoute);
 app.use(userRoute);
 
 // ... rutes
@@ -64,7 +83,7 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(null, {
   swaggerOptions: { url: "/spec/openapi.yaml" }
 }));
 
-app.use("/static/events", express.static(eventsDir));
+app.use('/static/events', express.static(eventsDir));
 
 
 app.use(errorHandler);

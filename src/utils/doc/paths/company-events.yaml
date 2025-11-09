@@ -2,7 +2,11 @@ get:
   tags: [Company]
   operationId: listCompanyEvents
   summary: Lista eventos por company_id
-  description: Devuelve eventos filtrados por compañía con paginación y filtros opcionales.
+  description: >
+    Devuelve los eventos de una compañía con paginación y filtros opcionales.
+    Se pueden aplicar filtros por rango de fechas (`dateFrom` / `dateTo`),
+    por nombre (`name`), por categoría (`category`) y por estado del evento (`status`).
+    Tanto `category` como `status` pueden repetirse en la query para filtrar por varios valores.
   parameters:
     - in: path
       name: companyId
@@ -11,24 +15,42 @@ get:
       schema:
         type: integer
         minimum: 1
+
     - in: query
       name: limit
       required: false
       schema: { type: integer, minimum: 1, maximum: 500, default: 50 }
+
     - in: query
       name: offset
       required: false
       schema: { type: integer, minimum: 0, default: 0 }
+
+    - in: query
+      name: name
+      required: false
+      description: Substring del nombre del evento (búsqueda parcial, case-insensitive)
+      schema:
+        type: string
+        maxLength: 200
+      examples:
+        parcial:
+          value: "meetup"
+        conf:
+          value: "conf"
+
     - in: query
       name: dateFrom
       required: false
       description: Fecha mínima (YYYY-MM-DD)
       schema: { type: string, format: date }
+
     - in: query
       name: dateTo
       required: false
       description: Fecha máxima (YYYY-MM-DD)
       schema: { type: string, format: date }
+
     - in: query
       name: category
       required: false
@@ -38,11 +60,39 @@ get:
         items: { type: string }
       style: form
       explode: true
+
+    - in: query
+      name: status
+      required: false
+      description: >
+        Estado del evento. Acepta el id numérico (`event_status_id`) o el código en minúsculas
+        definido en el catálogo (`draft`, `scheduled`, `on_sale`, `paused`, `edit_lock`,
+        `closed`, `completed`, `canceled`). Puede repetirse para múltiples valores
+        (?status=on_sale&status=paused).
+      schema:
+        type: array
+        items:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: string
+              maxLength: 50
+      style: form
+      explode: true
+      examples:
+        porCodigo:
+          value: [ "on_sale" ]
+        porId:
+          value: [ 3 ]
+        varios:
+          value: [ "on_sale", "paused" ]
+
     - in: query
       name: full
       required: false
       description: Si es true, incluye asociaciones (company, location, tickets)
       schema: { type: boolean, default: false }
+
     - in: query
       name: orderBy
       required: false
@@ -50,6 +100,7 @@ get:
         type: string
         enum: [event_date, start_time, created_at]
         default: event_date
+
     - in: query
       name: orderDir
       required: false
@@ -57,6 +108,7 @@ get:
         type: string
         enum: [ASC, DESC]
         default: ASC
+
   responses:
     "200":
       description: Lista de eventos
@@ -78,6 +130,7 @@ get:
                     end_time: "17:00:00"
                     company_id: 7
                     event_location_id: 3
+                    event_status_id: 3
                     created_at: "2025-01-15T10:12:00.000Z"
                     updated_at: "2025-01-15T10:12:00.000Z"
                   - event_id: 135
@@ -89,6 +142,7 @@ get:
                     end_time: "20:30:00"
                     company_id: 7
                     event_location_id: 5
+                    event_status_id: 1
                     created_at: "2025-02-01T09:00:00.000Z"
                     updated_at: "2025-02-01T09:00:00.000Z"
             conFechas:
@@ -104,8 +158,41 @@ get:
                     end_time: "17:00:00"
                     company_id: 7
                     event_location_id: 3
+                    event_status_id: 3
                     created_at: "2025-01-15T10:12:00.000Z"
                     updated_at: "2025-01-15T10:12:00.000Z"
+            porStatus:
+              value:
+                count: 1
+                rows:
+                  - event_id: 200
+                    event_name: "Summer Festival"
+                    category: "Festival"
+                    description: "Music & food"
+                    event_date: "2025-07-15"
+                    start_time: "16:00:00"
+                    end_time: "23:00:00"
+                    company_id: 7
+                    event_location_id: 10
+                    event_status_id: 3
+                    created_at: "2025-04-20T11:00:00.000Z"
+                    updated_at: "2025-04-20T11:00:00.000Z"
+            porNombre:
+              value:
+                count: 1
+                rows:
+                  - event _id: 135
+                    event_name: "Monthly Meetup"
+                    category: "Meetup"
+                    description: "Community networking"
+                    event_date: "2025-06-05"
+                    start_time: "18:30:00"
+                    end_time: "20:30:00"
+                    company_id: 7
+                    event_location_id: 5
+                    event_status_id: 1
+                    created_at: "2025-02-01T09:00:00.000Z"
+                    updated_at: "2025-02-01T09:00:00.000Z"
     "400":
       description: Error de validación (params/query inválidos)
       content:
@@ -115,6 +202,7 @@ get:
           examples:
             rangoFechas:
               value: { message: "dateFrom must be <= dateTo." }
+
     "404":
       description: Compañía no encontrada
       content:
@@ -124,5 +212,6 @@ get:
           examples:
             notFound:
               value: { message: "Company not found" }
+
   security:
     - bearerAuth: []
