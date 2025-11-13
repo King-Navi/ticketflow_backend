@@ -51,6 +51,7 @@ export async function handleStripeWebhook(req, res) {
 
         case "payment_intent.payment_failed": {
             //liberar la reserva?
+            //¿EScribir que el pago fallo?
             return res.status(200).json({ received: true });
         }
 
