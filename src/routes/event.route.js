@@ -40,7 +40,7 @@ router.patch(
   editEventController
 );
 
-router.put(
+router.patch(
   `${EVENT_ROUTE}/:eventId/status`,
   authRequired(),
   requireRole(ROLE.ORGANIZER, ROLE.ADMIN),

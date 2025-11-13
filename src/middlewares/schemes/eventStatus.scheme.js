@@ -1,4 +1,3 @@
-// middlewares/schemes/eventStatus.scheme.js
 import Joi from "joi";
 
 const statusSchema = Joi.alternatives()

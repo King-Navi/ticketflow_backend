@@ -28,11 +28,11 @@ paths:
     $ref: "./paths/auth-register.yaml"
   /v1/company/:companyId/events:
     $ref: "./paths/company-events.yaml"
-  /v1/events/new:
+  /v1/event/new:
     $ref: "./paths/events-create.yaml"
-  /v1/events/events/search:
+  /v1/event/search:
     $ref: "./paths/events-search.yaml"
-  /v1/events/edit/:eventId:
+  /v1/event/edit/:eventId:
     $ref: "./paths/events-edit.yaml"
   /v1/event/img/:eventId/new:
     $ref: "./paths/event-upload-image.yaml"
@@ -50,6 +50,8 @@ paths:
     $ref: "./paths/location-layout.yaml"
   /v1/organizer/edit:
     $ref: "./paths/organizer-update.yaml"
+  /v1/organizer/me:
+    $ref: "./paths/organizer-me.yaml"
   /v1/reservations/reserve:
     $ref: "./paths/reservations-create.yaml"
   
@@ -77,6 +79,8 @@ components:
     EventLocation:
       $ref: "./schemas/eventLocation.yaml#/EventLocation"
 
+    OrganizerBasicInfoResponse:
+      $ref: "./schemas/organizer.yaml#/OrganizerBasicInfoResponse"
     UpdateOrganizerRequest:
       $ref: "./schemas/organizer.yaml#/UpdateOrganizerRequest"
     UpdateOrganizerResponse:

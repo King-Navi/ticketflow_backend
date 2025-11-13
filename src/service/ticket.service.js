@@ -243,7 +243,7 @@ export async function finalizeTicketPurchaseFromStripe(paymentIntent) {
             }
             const seat = await eventSeatRepo.findById(seatId, { transaction: tx });
             const unitPrice = Number(seat.base_price);
-            // TODO: crear ticket
+            // TODO: crear ticket CON LA FUNCION DE LA BD 'fn01_create_ticket_with_qr'
             await ticketRepo.createTicketFromSeat({
                 payment_id: paymentId,
                 event_seat_id: seatId,

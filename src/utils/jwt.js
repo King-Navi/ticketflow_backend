@@ -33,5 +33,9 @@ export function generateToken(profileId, email, nickname, firstName, roleCode, c
     username: firstName,
     typeUser: roleCode,
   };
+  if (process.env.DEBUG === "true"){
+    return jwt.sign(payload, process.env.JWT_SECRET, { algorithm: 'HS256'}); 
+  }
+
   return jwt.sign(payload, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: '8h' });
 }

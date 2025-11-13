@@ -2,6 +2,7 @@ import _sequelize from "sequelize";
 const DataTypes = _sequelize.DataTypes;
 import _attendee from  "./attendee.js";
 import _card from  "./card.js";
+import _check_in_status from  "./check_in_status.js";
 import _company from  "./company.js";
 import _credential from  "./credential.js";
 import _crypto_payment from  "./crypto_payment.js";
@@ -22,11 +23,14 @@ import _reservation from  "./reservation.js";
 import _seat from  "./seat.js";
 import _section from  "./section.js";
 import _ticket from  "./ticket.js";
+import _ticket_check_in from  "./ticket_check_in.js";
+import _ticket_qr from  "./ticket_qr.js";
 import _ticket_status from  "./ticket_status.js";
 
 export default function initModels(sequelize) {
   const attendee = _attendee.init(sequelize, DataTypes);
   const card = _card.init(sequelize, DataTypes);
+  const check_in_status = _check_in_status.init(sequelize, DataTypes);
   const company = _company.init(sequelize, DataTypes);
   const credential = _credential.init(sequelize, DataTypes);
   const crypto_payment = _crypto_payment.init(sequelize, DataTypes);
@@ -47,6 +51,8 @@ export default function initModels(sequelize) {
   const seat = _seat.init(sequelize, DataTypes);
   const section = _section.init(sequelize, DataTypes);
   const ticket = _ticket.init(sequelize, DataTypes);
+  const ticket_check_in = _ticket_check_in.init(sequelize, DataTypes);
+  const ticket_qr = _ticket_qr.init(sequelize, DataTypes);
   const ticket_status = _ticket_status.init(sequelize, DataTypes);
 
   payment.belongsTo(attendee, { as: "attendee", foreignKey: "attendee_id"});
@@ -55,6 +61,8 @@ export default function initModels(sequelize) {
   attendee.hasMany(payment_method, { as: "payment_methods", foreignKey: "attendee_id"});
   reservation.belongsTo(attendee, { as: "attendee", foreignKey: "attendee_id"});
   attendee.hasMany(reservation, { as: "reservations", foreignKey: "attendee_id"});
+  ticket_check_in.belongsTo(check_in_status, { as: "check_in_status", foreignKey: "check_in_status_id"});
+  check_in_status.hasMany(ticket_check_in, { as: "ticket_check_ins", foreignKey: "check_in_status_id"});
   event.belongsTo(company, { as: "company", foreignKey: "company_id"});
   company.hasMany(event, { as: "events", foreignKey: "company_id"});
   organizer.belongsTo(company, { as: "company", foreignKey: "company_id"});
@@ -101,12 +109,17 @@ export default function initModels(sequelize) {
   section.hasMany(seat, { as: "seats", foreignKey: "section_id"});
   refund.belongsTo(ticket, { as: "ticket", foreignKey: "ticket_id"});
   ticket.hasOne(refund, { as: "refund", foreignKey: "ticket_id"});
+  ticket_qr.belongsTo(ticket, { as: "ticket", foreignKey: "ticket_id"});
+  ticket.hasMany(ticket_qr, { as: "ticket_qrs", foreignKey: "ticket_id"});
+  ticket_check_in.belongsTo(ticket_qr, { as: "ticket_qr", foreignKey: "ticket_qr_id"});
+  ticket_qr.hasMany(ticket_check_in, { as: "ticket_check_ins", foreignKey: "ticket_qr_id"});
   ticket.belongsTo(ticket_status, { as: "ticket_status", foreignKey: "ticket_status_id"});
   ticket_status.hasMany(ticket, { as: "tickets", foreignKey: "ticket_status_id"});
 
   return {
     attendee,
     card,
+    check_in_status,
     company,
     credential,
     crypto_payment,
@@ -127,6 +140,8 @@ export default function initModels(sequelize) {
     seat,
     section,
     ticket,
+    ticket_check_in,
+    ticket_qr,
     ticket_status,
   };
 }

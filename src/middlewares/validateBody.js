@@ -19,6 +19,7 @@ export function validateBody(schema) {
 
     const { error } = schema.validate(req.body, { abortEarly: false });
     if (error) {
+      console.log(error)
       let badreq = new BadRequest();
       return res.status(400).json({
         status: badreq.name,

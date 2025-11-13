@@ -291,11 +291,24 @@ export async function updateEventStatusService(eventId, newStatus, organizerCred
     throw new Unauthorized("Organizer cannot change status for this event.");
   }
 
-  const statusId = typeof newStatus === "number"
-    ? newStatus
-    : EVENT_STATUS_CODE[String(newStatus).toLowerCase()];
+  let statusId;
+
+  if (typeof newStatus === "number") {
+    statusId = newStatus;
+  } else {
+    const raw = String(newStatus).trim();
+
+    if (/^\d+$/.test(raw)) {
+      statusId = Number(raw);
+    } else {
+      statusId = EVENT_STATUS_CODE[raw.toLowerCase()];
+    }
+  }
+
+  if (!statusId) {
+    throw new Error("Invalid event status.");
+  }
 
   const updated = await eventRepo.updateEventStatus(eventId, statusId);
-
   return updated;
 }

@@ -27,3 +27,39 @@ export async function updateOrganizerProfileService(credentialId, payload = {}) 
   );
   return updated;
 }
+
+
+/**
+ * Retrieves basic organizer info (separated names and company_id)
+ * for a given credentialId.
+ *
+ * @param {number} credentialId
+ * @returns {Promise<{first_name: string, middle_name: string|null, last_name: string, company_id: number|null}>}
+ *
+ * @throws {Error} If unauthorized or organizer not found.
+ */
+export async function getOrganizerBasicInfoService(credentialId) {
+  if (!credentialId) {
+    throw new Error("Unauthorized.");
+  }
+
+  const organizer = await organizerRepo.findOrganizerByCredentialId(credentialId);
+
+  if (!organizer) {
+    throw new Error("Organizer not found.");
+  }
+
+  const {
+    first_name,
+    middle_name,
+    last_name,
+    company_id,
+  } = organizer;
+
+  return {
+    first_name,
+    middle_name,
+    last_name,
+    company_id,
+  };
+}

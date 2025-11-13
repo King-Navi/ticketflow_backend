@@ -33,6 +33,7 @@ export async function editEventController(req, res) {
     const { eventId } = req.params;
     const payload = req.body;
     const updatedEvent = await editEventService(eventId, payload, organizerCredentialId);
+
     return res.status(200).json({
       message: "Event updated successfully.",
       event: updatedEvent,
@@ -79,17 +80,6 @@ export async function editEventController(req, res) {
   }
 }
 
-
-//TODO:
-export async function deleteEventController(req, res) {
-  try {
-    const result = deleteEventController();
-    return res.status(201).json({ msg: "Ok" });
-  } catch (err) {
-  }
-  return res.status(500).json({ message: "Error" });
-}
-
 export async function searchCompanyEventsController(req, res) {
   try {
     const q = (res.locals?.validated?.query) ?? req.query;
@@ -118,7 +108,7 @@ export async function searchCompanyEventsController(req, res) {
     });
     return res.json({ count, rows });
   } catch (err) {
-    if(process.env.DEBUG === "true"){
+    if (process.env.DEBUG === "true") {
       console.error(err)
     }
   }
@@ -133,7 +123,6 @@ export async function updateEventStatusController(req, res) {
       req.user?.credential_id ||
       req.user?.sub ||
       null;
-
     const updated = await updateEventStatusService(
       eventId,
       status,

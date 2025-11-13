@@ -17,6 +17,8 @@ router.post(
     buyTicketController
 );
 
+//TODO: /qr/<token>.png que dibuja y devuelve el PNG/SVG.
+
 export default router;
 
 

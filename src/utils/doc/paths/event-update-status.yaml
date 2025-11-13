@@ -1,4 +1,4 @@
-put:
+patch:
   summary: Update event status
   description: >
     Updates the status of an event. Only the organizer (from the same company as the event)
@@ -45,7 +45,25 @@ put:
                 type: string
                 example: Event status updated successfully.
               event:
-                $ref: "#/components/schemas/Event"
+                $ref: "../schemas/event.yaml#/Event"
+          examples:
+            success:
+              summary: Example successful response
+              value:
+                message: "Event status updated successfully."
+                event:
+                  event_id: 1
+                  event_name: "AI & Data Summit 2026"
+                  category: "Technology"
+                  description: "Cumbre internacional que reunirá a expertos en IA, MLOps y plataformas de datos para compartir casos de uso, mejores prácticas y tendencias que impulsan la innovación empresarial. (196 caracteres)"
+                  event_date: "2025-11-10"
+                  start_time: "10:30:00"
+                  end_time: "18:00:00"
+                  company_id: 2
+                  event_location_id: 1
+                  event_status_id: 3
+                  created_at: "2025-11-13T03:18:28.288Z"
+                  updated_at: "2025-11-13T08:56:12.876Z"
     "400":
       description: Bad request (invalid status or body)
       content:
@@ -98,51 +116,6 @@ components:
       bearerFormat: JWT
 
   schemas:
-    Event:
-      type: object
-      description: Event object returned after updating status.
-      properties:
-        id:
-          type: integer
-          example: 42
-        event_name:
-          type: string
-          example: "Node.js Meetup"
-        category:
-          type: string
-          example: "meetup"
-        description:
-          type: string
-          nullable: true
-        event_date:
-          type: string
-          format: date
-          example: "2025-11-15"
-        start_time:
-          type: string
-          example: "19:00:00"
-        end_time:
-          type: string
-          nullable: true
-          example: "21:00:00"
-        company_id:
-          type: integer
-          example: 3
-        event_location_id:
-          type: integer
-          example: 7
-        status_id:
-          type: integer
-          example: 2
-      required:
-        - id
-        - event_name
-        - event_date
-        - start_time
-        - company_id
-        - event_location_id
-        - status_id
-
     Error:
       type: object
       properties:

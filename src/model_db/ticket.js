@@ -23,10 +23,6 @@ export default class ticket extends Model {
       type: DataTypes.DECIMAL,
       allowNull: false
     },
-    qr_code: {
-      type: DataTypes.BLOB,
-      allowNull: false
-    },
     checked_in_at: {
       type: DataTypes.DATE,
       allowNull: true

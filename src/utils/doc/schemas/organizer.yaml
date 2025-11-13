@@ -63,3 +63,28 @@ UpdateOrganizerResponse:
           type: string
           format: date-time
           example: "2025-11-02T18:40:00.000Z"
+
+OrganizerBasicInfoResponse:
+  type: object
+  properties:
+    first_name:
+      type: string
+      description: Nombre del organizer
+      example: "Ana"
+    middle_name:
+      type: string
+      nullable: true
+      description: Segundo nombre del organizer (opcional)
+      example: null
+    last_name:
+      type: string
+      description: Apellido del organizer
+      example: "Torres"
+    company_id:
+      type: integer
+      nullable: true
+      description: ID de la empresa asociada (puede ser null si no tiene empresa)
+      example: 12
+  required:
+    - first_name
+    - last_name

@@ -1,0 +1,70 @@
+get:
+  tags: [Organizer]
+  operationId: getOrganizerBasicInfo
+  summary: Obtiene la información básica del organizer autenticado
+  description: >
+    Devuelve los datos básicos del organizer autenticado, tomando el credential_id
+    desde el token JWT. La respuesta incluye `first_name`, `middle_name`, `last_name`
+    y `company_id`.
+
+    Reglas de negocio:
+    - Solo el propio organizer puede consultar su información.
+    - Se requiere un token JWT válido con rol de ORGANIZER.
+  responses:
+    "200":
+      description: Información del organizer encontrada
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/organizer.yaml#/OrganizerBasicInfoResponse"
+          examples:
+            success:
+              value:
+                first_name: "Ana"
+                middle_name: null
+                last_name: "Torres"
+                company_id: 12
+
+    "401":
+      description: Token ausente o inválido
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            unauthorized:
+              value:
+                message: "Unauthorized."
+
+    "403":
+      description: Rol insuficiente (no es organizer)
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            forbidden:
+              value:
+                message: "Insufficient role."
+
+    "404":
+      description: Organizer no encontrado para el credential_id del token
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            notFound:
+              value:
+                message: "Organizer not found."
+
+    "500":
+      description: Error interno del servidor
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            serverError:
+              value:
+                message: "Internal server error"
