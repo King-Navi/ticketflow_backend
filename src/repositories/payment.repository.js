@@ -27,7 +27,9 @@ export default class PaymentRepository {
       tax_amount,
       total_amount,
       ticket_quantity,
-      payment_method_id
+      payment_method_id,
+      attendee_id,
+      stripe_payment_intent_id
     } = data || {};
 
     if (subtotal == null) throw new Error("subtotal is required.");
@@ -37,8 +39,9 @@ export default class PaymentRepository {
     if (!ticket_quantity || ticket_quantity <= 0) {
       throw new Error("ticket_quantity must be greater than 0.");
     }
-    if (!payment_method_id) {
-      throw new Error("payment_method_id is required.");
+    
+    if (!attendee_id) {
+      throw new Error("attendee_id is required.");
     }
 
     try {
@@ -49,12 +52,15 @@ export default class PaymentRepository {
           tax_amount,
           total_amount,
           ticket_quantity,
-          payment_method_id,
+          payment_method_id: payment_method_id || null,
+          attendee_id,
+          stripe_payment_intent_id
         },
         { transaction }
       );
 
       return rec.payment_id;
+
     } catch (error) {
       if (error instanceof Sequelize.ConnectionError) {
         throw new Error("Cannot connect to the database.");

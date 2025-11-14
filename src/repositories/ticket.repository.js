@@ -87,4 +87,58 @@ export default class TicketRepository {
       ticketStatusId === TICKET_STATUS.CANCELED
     );
   }
+
+  /**
+ * Creates a ticket using the PostgreSQL function fn01_create_ticket_with_qr
+ *
+ * @param {{
+ *   payment_id: number,
+ *   event_seat_id: number,
+ *   unit_price: number,
+ *   ticket_status_code: string
+ * }} data
+ * @param {{transaction?: import("sequelize").Transaction}} [options]
+ * @returns {Promise<number>} ticket_id
+ */
+async createTicketFromSeat(
+  { payment_id, event_seat_id, unit_price, ticket_status_code },
+  { transaction } = {}
+) {
+  if (!payment_id) throw new Error("payment_id is required.");
+  if (!event_seat_id) throw new Error("event_seat_id is required.");
+  if (!unit_price) throw new Error("unit_price is required.");
+  if (!ticket_status_code) throw new Error("ticket_status_code is required.");
+
+  try {
+    const sql = `
+      SELECT fn01_create_ticket_with_qr(
+        :payment_id,
+        :event_seat_id,
+        :unit_price,
+        :ticket_status_code
+      ) AS ticket_id;
+    `;
+
+    const [rows] = await this.model.sequelize.query(sql, {
+      replacements: {
+        payment_id,
+        event_seat_id,
+        unit_price,
+        ticket_status_code,
+      },
+      transaction,
+    });
+
+    return rows[0].ticket_id;
+  } catch (error) {
+    if (error instanceof Sequelize.ConnectionError) {
+      throw new Error("Cannot connect to the database.");
+    }
+    if (error instanceof Sequelize.DatabaseError) {
+      throw new Error("Database error occurred.");
+    }
+    throw error;
+  }
+}
+
 }

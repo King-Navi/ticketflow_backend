@@ -59,6 +59,10 @@ export default class payment extends Model {
         model: 'reservation',
         key: 'reservation_id'
       }
+    },
+    stripe_payment_intent_id: {
+      type: DataTypes.STRING,
+      allowNull: false
     }
   }, {
     sequelize,

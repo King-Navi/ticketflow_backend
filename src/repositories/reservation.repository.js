@@ -137,4 +137,31 @@ export default class ReservationRepository {
       throw error;
     }
   }
+ 
+  async markConverted(reservationId, { transaction } = {}) {
+    if (!reservationId) throw new Error("reservationId is required.");
+
+    try {
+      const [count] = await this.model.update(
+        {
+          status: "converted",
+          updated_at: new Date(),
+        },
+        {
+          where: { reservation_id: reservationId },
+          transaction,
+        }
+      );
+
+      return count > 0;
+    } catch (error) {
+      if (error instanceof Sequelize.ConnectionError) {
+        throw new Error("Cannot connect to the database.");
+      }
+      if (error instanceof Sequelize.DatabaseError) {
+        throw new Error("Database error occurred.");
+      }
+      throw error;
+    }
+  }
 }

@@ -222,9 +222,7 @@ export async function finalizeTicketPurchaseFromStripe(paymentIntent) {
             tax_amount,
             total_amount,
             ticket_quantity,
-            attendee_id: attendeeId,
-            // payment_method_id: ... (depende de tu modelo),
-            // puedes guardar el paymentIntent.id en una columna extra
+            attendee_id: attendeeId,            
             stripe_payment_intent_id: paymentIntent.id,
         }, { transaction: tx });
 
