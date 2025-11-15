@@ -97,12 +97,8 @@ export default function initModels(sequelize) {
   payment_method.hasOne(card, { as: "card", foreignKey: "payment_method_id"});
   crypto_payment.belongsTo(payment_method, { as: "payment_method", foreignKey: "payment_method_id"});
   payment_method.hasOne(crypto_payment, { as: "crypto_payment", foreignKey: "payment_method_id"});
-  payment.belongsTo(payment_method, { as: "payment_method", foreignKey: "payment_method_id"});
-  payment_method.hasMany(payment, { as: "payments", foreignKey: "payment_method_id"});
   refund.belongsTo(refund_status, { as: "refund_status", foreignKey: "refund_status_id"});
   refund_status.hasMany(refund, { as: "refunds", foreignKey: "refund_status_id"});
-  payment.belongsTo(reservation, { as: "reservation", foreignKey: "reservation_id"});
-  reservation.hasMany(payment, { as: "payments", foreignKey: "reservation_id"});
   event_seat.belongsTo(seat, { as: "seat", foreignKey: "seat_id"});
   seat.hasMany(event_seat, { as: "event_seats", foreignKey: "seat_id"});
   seat.belongsTo(section, { as: "section", foreignKey: "section_id"});

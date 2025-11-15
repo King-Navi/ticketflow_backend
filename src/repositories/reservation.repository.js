@@ -1,6 +1,6 @@
 import { Sequelize } from "sequelize";
 import ReservationModel from "../model_db/reservation.js";
-
+import { RESERVATION_STATUS } from "../model_db/utils/reservationStatus.js"
 const { Op } = Sequelize;
 
 export default class ReservationRepository {
@@ -31,8 +31,21 @@ export default class ReservationRepository {
         },
         transaction,
       });
+      if (!rec) {
+        return null;
+      }
+      if (rec.expiration_at <= now) {
+        await rec.update(
+          {
+            status: "expired",
+            updated_at: now,
+          },
+          { transaction }
+        );
+        return null;
+      }
 
-      return rec ? rec.get({ plain: true }) : null;
+      return rec.get({ plain: true });
     } catch (error) {
       if (error instanceof Sequelize.ConnectionError) {
         throw new Error("Cannot connect to the database.");
@@ -137,14 +150,14 @@ export default class ReservationRepository {
       throw error;
     }
   }
- 
+
   async markConverted(reservationId, { transaction } = {}) {
     if (!reservationId) throw new Error("reservationId is required.");
 
     try {
       const [count] = await this.model.update(
         {
-          status: "converted",
+          status: RESERVATION_STATUS.CONVERTED,
           updated_at: new Date(),
         },
         {

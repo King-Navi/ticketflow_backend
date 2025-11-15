@@ -54,7 +54,7 @@ export async function createReservationService(
 
     // 2. verify that this event_seat_id actually belongs to this event_id
     // (query event_seat where event_id = event_id AND event_seat_id = event_seat_id)
-    const eventSeat = await eventSeatRepo.ensureEventSeatBelongsToEvent(
+    let eventSeat = await eventSeatRepo.ensureEventSeatBelongsToEvent(
         event_id,
         event_seat_id,
         { transaction }
@@ -79,7 +79,7 @@ export async function createReservationService(
     }
 
     // 4. check ticket for this event_seat_id and reject if sold/checked_in
-    const existingTicket = await ticketRepo.findByEventSeatId(event_seat_id, {
+    let existingTicket = await ticketRepo.findByEventSeatId(event_seat_id, {
         transaction,
     });
 
@@ -97,12 +97,23 @@ export async function createReservationService(
 
     // 5.(optional) check event_seat_status is not blocked/sold
     if (eventSeat.event_seat_status_id !== EVENT_SEAT_STATUS.AVAILABLE) {
-        const err = new Conflict("This seat is not available for reservation.");
-        err.meta = {
-            current_status_id: eventSeat.event_seat_status_id,
-            allowed_status_id: EVENT_SEAT_STATUS.AVAILABLE,
-        };
-        throw err;
+        if (
+            eventSeat.event_seat_status_id === EVENT_SEAT_STATUS.RESERVED &&
+            !existingActiveReservation
+        ) {
+            eventSeat = await eventSeatRepo.updateEventSeatStatus(
+                event_seat_id,
+                EVENT_SEAT_STATUS.AVAILABLE,
+                { transaction }
+            );
+        } else {
+            const err = new Conflict("This seat is not available for reservation.");
+            err.meta = {
+                current_status_id: eventSeat.event_seat_status_id,
+                allowed_status_id: EVENT_SEAT_STATUS.AVAILABLE,
+            };
+            throw err;
+        }
     }
     // 6. create reservation row + update event_seat to "reserved"
     const reservation = await reservationRepo.createReservation(
@@ -119,8 +130,6 @@ export async function createReservationService(
         { transaction }
     );
     return {
-        ok: true,
-        message: "Reservation created and seat marked as reserved.",
         reservation,
         event,
         eventSeat: updatedSeat,

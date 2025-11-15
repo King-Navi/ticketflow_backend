@@ -1,14 +1,14 @@
 import express from "express";
 import Stripe from "stripe";
 import bodyParser from "body-parser";
-import {finalizeTicketPurchaseFromStripe} from "../service/ticket.service.js"
+import { finalizeTicketPurchaseFromStripe } from "../service/ticket.service.js"
 let stripe;
 let endpointSecret;
 
 if (process.env.DEBUG === "true") {
     stripe = new Stripe(process.env.STRIPE_SECRET_KEY_DEV);
     endpointSecret = process.env.STRIPE_WEBHOOK_SECRET_DEV;
-}else{
+} else {
     stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 }
@@ -25,12 +25,16 @@ export async function handleStripeWebhook(req, res) {
         }
         return res.status(400).send(`Webhook Error`);
     }
+
+
     //Cuiado con status != 200 ya que stripe reintentara el pago
     switch (event.type) {
         case "payment_intent.succeeded": {
             const paymentIntent = event.data.object;
             const metadata = paymentIntent.metadata || {};
-
+            if (process.env.DEBUG === "true") {
+                console.log(metadata);
+            }
             // example:
             // metadata.attendee_id
             // metadata.event_id
@@ -39,11 +43,12 @@ export async function handleStripeWebhook(req, res) {
             // metadata.tax_amount
 
             try {
-                //TODO: finish 
-                //await finalizeTicketPurchaseFromStripe(paymentIntent);
+                await finalizeTicketPurchaseFromStripe(paymentIntent);
                 return res.status(200).json({ received: true });
             } catch (err) {
-                console.error("Error while finalizing purchase:", err);
+                if (process.env.DEBUG === "true") {
+                    console.error("Error while finalizing purchase:", err);
+                }
                 // responde 200 para que puedas revisar logs 
                 return res.status(200).json({ error: "failed to finalize but give you 200 only if you re stripe" });
             }

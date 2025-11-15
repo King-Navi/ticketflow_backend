@@ -18,6 +18,7 @@ export async function buyTicketController(req, res) {
     const result = await buyTicketService(event_seat_id, attendeeId, { holdMinutes });
     return res.status(200).json(result);
   } catch (error) {
+    console.log(error)
     if (error instanceof BadRequest) {
       return res.status(error.code).json({ message: error.message, meta: error.meta });
     }

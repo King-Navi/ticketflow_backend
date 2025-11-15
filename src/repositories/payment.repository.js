@@ -6,20 +6,7 @@ export default class PaymentRepository {
     this.model = model;
   }
 
-  /**
-   * Crea un payment
-   * @param {{
-   *   subtotal: number,
-   *   tax_percentage: number,
-   *   tax_amount: number,
-   *   total_amount: number,
-   *   ticket_quantity: number,
-   *   payment_method_id: number,
-   *   reservation_id?: number
-   * }} data
-   * @param {{ transaction?: import('sequelize').Transaction }} [options]
-   * @returns {Promise<number>} payment_id
-   */
+
   async createPayment(data, { transaction } = {}) {
     const {
       subtotal,
@@ -27,9 +14,8 @@ export default class PaymentRepository {
       tax_amount,
       total_amount,
       ticket_quantity,
-      payment_method_id,
       attendee_id,
-      stripe_payment_intent_id
+      stripe_payment_intent_id,
     } = data || {};
 
     if (subtotal == null) throw new Error("subtotal is required.");
@@ -38,10 +24,6 @@ export default class PaymentRepository {
     if (total_amount == null) throw new Error("total_amount is required.");
     if (!ticket_quantity || ticket_quantity <= 0) {
       throw new Error("ticket_quantity must be greater than 0.");
-    }
-    
-    if (!attendee_id) {
-      throw new Error("attendee_id is required.");
     }
 
     try {
@@ -52,9 +34,8 @@ export default class PaymentRepository {
           tax_amount,
           total_amount,
           ticket_quantity,
-          payment_method_id: payment_method_id || null,
           attendee_id,
-          stripe_payment_intent_id
+          stripe_payment_intent_id,
         },
         { transaction }
       );
@@ -79,6 +60,29 @@ export default class PaymentRepository {
   async findById(paymentId) {
     try {
       return await this.model.findByPk(paymentId);
+    } catch (error) {
+      if (error instanceof Sequelize.ConnectionError) {
+        throw new Error("Cannot connect to the database.");
+      }
+      if (error instanceof Sequelize.DatabaseError) {
+        throw new Error("Database error occurred.");
+      }
+      throw error;
+    }
+  }
+  async findByStripePaymentIntentId(
+    stripePaymentIntentId,
+    { transaction } = {}
+  ) {
+    if (!stripePaymentIntentId) {
+      throw new Error("stripe_payment_intent_id is required.");
+    }
+
+    try {
+      return await this.model.findOne({
+        where: { stripe_payment_intent_id: stripePaymentIntentId },
+        transaction,
+      });
     } catch (error) {
       if (error instanceof Sequelize.ConnectionError) {
         throw new Error("Cannot connect to the database.");

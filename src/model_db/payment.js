@@ -44,25 +44,10 @@ export default class payment extends Model {
         key: 'attendee_id'
       }
     },
-    payment_method_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: 'payment_method',
-        key: 'payment_method_id'
-      }
-    },
-    reservation_id: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'reservation',
-        key: 'reservation_id'
-      }
-    },
     stripe_payment_intent_id: {
-      type: DataTypes.STRING,
-      allowNull: false
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      unique: "payment_stripe_payment_intent_id_key"
     }
   }, {
     sequelize,
@@ -81,22 +66,24 @@ export default class payment extends Model {
         ]
       },
       {
-        name: "idx_payment_payment_method_id",
-        fields: [
-          { name: "payment_method_id" },
-        ]
-      },
-      {
-        name: "idx_payment_reservation_id",
-        fields: [
-          { name: "reservation_id" },
-        ]
-      },
-      {
         name: "payment_pkey",
         unique: true,
         fields: [
           { name: "payment_id" },
+        ]
+      },
+      {
+        name: "payment_stripe_payment_intent_id_key",
+        unique: true,
+        fields: [
+          { name: "stripe_payment_intent_id" },
+        ]
+      },
+      {
+        name: "uq_payment_stripe_pi",
+        unique: true,
+        fields: [
+          { name: "stripe_payment_intent_id" },
         ]
       },
     ]
