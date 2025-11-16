@@ -1,0 +1,195 @@
+post:
+  tags: [Ticket]
+  operationId: checkInTicket
+  summary: Validate and register ticket check-in using a QR token
+  description: >
+    Validates a ticket by its QR token and registers a check-in attempt.
+    The QR token must match an existing ticket_qr entry in the system.
+    The response always returns HTTP 200 and encodes the logical result in
+    the `status` field:
+    
+    - `ok`: first valid check-in for this ticket.
+    - `duplicate`: ticket was already checked in before (previous OK).
+    - `invalid`: QR token is not recognized, or ticket is refunded/canceled.
+    - `outside_window`: ticket is valid but the check-in is outside the
+      allowed event window (e.g. wrong day / time).
+
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            token:
+              type: string
+              description: Token embedded in the ticket QR code.
+            scanner_id:
+              type: integer
+              nullable: true
+              description: >
+                Optional identifier for the device or user performing the scan.
+          required:
+            - token
+        examples:
+          basicScan:
+            summary: Basic check-in by QR token
+            value:
+              token: "550e8400-e29b-41d4-a716-446655440000"
+          withScanner:
+            summary: Check-in including scanner identifier
+            value:
+              token: "550e8400-e29b-41d4-a716-446655440000"
+              scanner_id: 42
+
+  responses:
+    "200":
+      description: Check-in attempt processed successfully (logical result in payload)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              ok:
+                type: boolean
+                description: >
+                  Indicates whether the check-in was accepted (`true` for `status=ok`,
+                  `false` otherwise).
+              status:
+                type: string
+                description: Logical result of the check-in attempt.
+                enum: ["ok", "duplicate", "invalid", "outside_window"]
+              code:
+                type: integer
+                description: >
+                  Numeric code for the check-in status:
+                  1=`ok`, 2=`duplicate`, 3=`invalid`, 4=`outside_window`.
+                enum: [1, 2, 3, 4]
+              message:
+                type: string
+                description: Human-readable message for the staff or client.
+              data:
+                type: object
+                nullable: true
+                description: >
+                  Additional data about the event and ticket. Present on both
+                  successful and failed check-in attempts.
+                properties:
+                  event_id:
+                    type: integer
+                    nullable: true
+                  event_name:
+                    type: string
+                    nullable: true
+                  event_date:
+                    type: string
+                    format: date
+                    nullable: true
+                  start_time:
+                    type: string
+                    format: time
+                    nullable: true
+                  end_time:
+                    type: string
+                    format: time
+                    nullable: true
+                  ticket_id:
+                    type: integer
+                    nullable: true
+                  seat_label:
+                    type: string
+                    nullable: true
+                  category_label:
+                    type: string
+                    nullable: true
+                  checked_in_at:
+                    type: string
+                    format: date-time
+                    nullable: true
+                  first_check_in_at:
+                    type: string
+                    format: date-time
+                    nullable: true
+                    description: >
+                      Timestamp of the first successful check-in, only
+                      present when `status=duplicate`.
+            required:
+              - ok
+              - status
+              - code
+              - message
+          examples:
+            firstOk:
+              summary: First valid check-in
+              value:
+                ok: true
+                status: "ok"
+                code: 1
+                message: "Ticket successfully checked in."
+                data:
+                  event_id: 10
+                  event_name: "Rock Fest 2025"
+                  event_date: "2025-08-01"
+                  start_time: "19:00:00"
+                  end_time: "23:00:00"
+                  ticket_id: 1234
+                  seat_label: "Row A Seat 10"
+                  category_label: "VIP"
+                  checked_in_at: "2025-08-01T19:05:00.000Z"
+            duplicate:
+              summary: Duplicate scan of an already checked-in ticket
+              value:
+                ok: false
+                status: "duplicate"
+                code: 2
+                message: "Ticket has already been checked in."
+                data:
+                  event_id: 10
+                  event_name: "Rock Fest 2025"
+                  event_date: "2025-08-01"
+                  start_time: "19:00:00"
+                  end_time: "23:00:00"
+                  ticket_id: 1234
+                  seat_label: "Row A Seat 10"
+                  category_label: "VIP"
+                  first_check_in_at: "2025-08-01T19:05:00.000Z"
+            invalid:
+              summary: Invalid or canceled/refunded ticket
+              value:
+                ok: false
+                status: "invalid"
+                code: 3
+                message: "Ticket is refunded or canceled."
+                data:
+                  event_name: "Rock Fest 2025"
+                  seat_label: "Row A Seat 10"
+                  category_label: "VIP"
+            outsideWindow:
+              summary: Check-in outside allowed event time window
+              value:
+                ok: false
+                status: "outside_window"
+                code: 4
+                message: "Ticket cannot be checked in at this time."
+                data:
+                  event_name: "Rock Fest 2025"
+                  event_date: "2025-08-01"
+                  start_time: "19:00:00"
+                  end_time: "23:00:00"
+                  seat_label: "Row A Seat 10"
+                  category_label: "VIP"
+
+    "400":
+      description: Validation error in the request body (e.g. missing token)
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            missingToken:
+              summary: Missing token
+              value:
+                message: "token is required."
+
+  security:
+    - bearerAuth: []

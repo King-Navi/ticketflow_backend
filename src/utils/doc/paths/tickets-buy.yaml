@@ -1,0 +1,239 @@
+post:
+  tags: [Ticket]
+  operationId: buyTickets
+  summary: Create a Stripe PaymentIntent for reserved event seats
+  description: >
+    Creates a Stripe PaymentIntent for one or more reserved event seats
+    belonging to the authenticated attendee. The seats MUST already be
+    reserved for this attendee; otherwise the request will fail with a
+    conflict. The response includes the Stripe client secret needed to
+    confirm the payment on the client, plus a snapshot of the calculated
+    amounts and the active reservations.
+
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            event_seat_id:
+              description: >
+                Single event_seat_id or an array of event_seat_id values
+                that are currently reserved for the authenticated attendee.
+              oneOf:
+                - type: integer
+                  minimum: 1
+                - type: array
+                  minItems: 1
+                  items:
+                    type: integer
+                    minimum: 1
+            holdMinutes:
+              type: integer
+              minimum: 1
+              maximum: 60
+              description: >
+                Optional override for how long the reservation will be held
+                (in minutes), if supported by the reservation logic.
+          required:
+            - event_seat_id
+        examples:
+          singleSeat:
+            summary: Single reserved seat
+            value:
+              event_seat_id: 123
+          multipleSeats:
+            summary: Multiple reserved seats
+            value:
+              event_seat_id: [101, 102, 103]
+              holdMinutes: 15
+
+  responses:
+    "200":
+      description: PaymentIntent successfully created for the requested seats
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              ok:
+                type: boolean
+                example: true
+              step:
+                type: string
+                description: Processing step identifier
+                enum: ["stripe-payment-intent-created"]
+              stripe_client_secret:
+                type: string
+                description: Stripe client secret used to confirm the PaymentIntent on the client
+              payment_snapshot:
+                type: object
+                description: Snapshot of the calculated amounts at the time of creation
+                properties:
+                  subtotal:
+                    type: number
+                    format: float
+                  tax_percentage:
+                    type: number
+                    format: float
+                  tax_amount:
+                    type: number
+                    format: float
+                  total_amount:
+                    type: number
+                    format: float
+                  ticket_quantity:
+                    type: integer
+                required:
+                  - subtotal
+                  - tax_percentage
+                  - tax_amount
+                  - total_amount
+                  - ticket_quantity
+              seats:
+                type: array
+                description: Seats included in this purchase attempt
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      description: event_seat_id
+                    price:
+                      type: number
+                      format: float
+                  required:
+                    - id
+                    - price
+              reservations:
+                type: array
+                description: Active reservations used for this purchase attempt
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      description: reservation_id
+                    seat_id:
+                      type: integer
+                      description: event_seat_id associated to the reservation
+                    expires_at:
+                      type: string
+                      format: date-time
+                      description: Reservation expiration timestamp
+                  required:
+                    - id
+                    - seat_id
+                    - expires_at
+            required:
+              - ok
+              - step
+              - stripe_client_secret
+              - payment_snapshot
+              - seats
+              - reservations
+          examples:
+            singleSeat:
+              summary: Single seat PaymentIntent
+              value:
+                ok: true
+                step: "stripe-payment-intent-created"
+                stripe_client_secret: "pi_12345_secret_abc"
+                payment_snapshot:
+                  subtotal: 500.0
+                  tax_percentage: 16
+                  tax_amount: 80.0
+                  total_amount: 580.0
+                  ticket_quantity: 1
+                seats:
+                  - id: 123
+                    price: 500.0
+                reservations:
+                  - id: 9001
+                    seat_id: 123
+                    expires_at: "2025-03-01T10:15:00.000Z"
+            multipleSeats:
+              summary: Multiple seats PaymentIntent
+              value:
+                ok: true
+                step: "stripe-payment-intent-created"
+                stripe_client_secret: "pi_67890_secret_xyz"
+                payment_snapshot:
+                  subtotal: 1500.0
+                  tax_percentage: 16
+                  tax_amount: 240.0
+                  total_amount: 1740.0
+                  ticket_quantity: 3
+                seats:
+                  - id: 101
+                    price: 500.0
+                  - id: 102
+                    price: 500.0
+                  - id: 103
+                    price: 500.0
+                reservations:
+                  - id: 9101
+                    seat_id: 101
+                    expires_at: "2025-03-01T10:10:00.000Z"
+                  - id: 9102
+                    seat_id: 102
+                    expires_at: "2025-03-01T10:10:00.000Z"
+                  - id: 9103
+                    seat_id: 103
+                    expires_at: "2025-03-01T10:10:00.000Z"
+
+    "400":
+      description: Validation error in the request body
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            invalidSeat:
+              summary: Invalid event_seat_id
+              value:
+                message: "event_seat_id must be a number or an array of numbers."
+            missingSeat:
+              summary: Missing event_seat_id
+              value:
+                message: "event_seat_id is required."
+
+    "401":
+      description: Missing or invalid authentication token
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            unauthorized:
+              value:
+                message: "Unauthorized"
+
+    "403":
+      description: The authenticated user is not an attendee
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            forbidden:
+              value:
+                message: "Forbidden"
+
+    "409":
+      description: Business conflict (seat not reserved, already has blocking ticket, etc.)
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            notReserved:
+              value:
+                message: "Seat is not reserved. Purchase is not allowed."
+            blockingTicket:
+              value:
+                message: "This seat already has a blocking ticket."
+
+  security:
+    - bearerAuth: []

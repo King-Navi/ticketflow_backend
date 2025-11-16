@@ -1,0 +1,184 @@
+get:
+  tags: [Ticket]
+  operationId: getMyEventsWithTickets
+  summary: List attendee tickets grouped by event
+  description: >
+    Returns all events for which the authenticated attendee has at least one
+    non-refunded / non-canceled ticket. Tickets are grouped by event in the
+    `events` array. You can optionally filter by the event status code
+    (e.g. `on_sale`, `scheduled`, `completed`, etc.) using the
+    `event_status_code` query parameter.
+
+  parameters:
+    - in: query
+      name: event_status_code
+      required: false
+      schema:
+        type: string
+        nullable: true
+        description: >
+          Optional event status code filter. If provided, only events in this
+          status will be returned. If omitted or null, events in any status
+          are included.
+        example: "on_sale"
+
+  responses:
+    "200":
+      description: List of events with tickets for the authenticated attendee
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              ok:
+                type: boolean
+                example: true
+              attendee_id:
+                type: integer
+                description: ID of the authenticated attendee.
+              filters:
+                type: object
+                properties:
+                  event_status_code:
+                    type: string
+                    nullable: true
+                    description: >
+                      Event status code used to filter results. Null if no
+                      filter was applied.
+              events:
+                type: array
+                description: Events that the attendee has tickets for, grouped by event.
+                items:
+                  type: object
+                  properties:
+                    event_id:
+                      type: integer
+                    event_name:
+                      type: string
+                    category:
+                      type: string
+                      nullable: true
+                    description:
+                      type: string
+                      nullable: true
+                    event_date:
+                      type: string
+                      format: date
+                    start_time:
+                      type: string
+                      format: time
+                      nullable: true
+                    end_time:
+                      type: string
+                      format: time
+                      nullable: true
+                    event_status_id:
+                      type: integer
+                    event_status_code:
+                      type: string
+                      description: >
+                        Normalized code for the event status
+                        (e.g. `draft`, `on_sale`, `completed`).
+                    event_location_id:
+                      type: integer
+                    venue_name:
+                      type: string
+                      nullable: true
+                    city:
+                      type: string
+                      nullable: true
+                    country:
+                      type: string
+                      nullable: true
+                    tickets:
+                      type: array
+                      description: >
+                        Non-refunded and non-canceled tickets for this event
+                        belonging to the attendee.
+                      items:
+                        type: object
+                        properties:
+                          ticket_id:
+                            type: integer
+                          category_label:
+                            type: string
+                            nullable: true
+                          seat_label:
+                            type: string
+                            nullable: true
+                          unit_price:
+                            type: number
+                            format: float
+                          ticket_status_id:
+                            type: integer
+                          ticket_status_name:
+                            type: string
+                            description: >
+                              Status name such as `sold` or `checked_in`.
+                          checked_in_at:
+                            type: string
+                            format: date-time
+                            nullable: true
+                        required:
+                          - ticket_id
+                          - unit_price
+                          - ticket_status_id
+                          - ticket_status_name
+                  required:
+                    - event_id
+                    - event_name
+                    - event_date
+                    - event_status_id
+                    - event_status_code
+                    - event_location_id
+                    - tickets
+            required:
+              - ok
+              - attendee_id
+              - events
+          examples:
+            allEvents:
+              summary: Events with tickets (no status filter)
+              value:
+                ok: true
+                attendee_id: 123
+                filters:
+                  event_status_code: null
+                events:
+                  - event_id: 10
+                    event_name: "Rock Fest 2025"
+                    category: "Concert"
+                    description: "Annual rock festival"
+                    event_date: "2025-08-01"
+                    start_time: "19:00:00"
+                    end_time: "23:00:00"
+                    event_status_id: 2
+                    event_status_code: "on_sale"
+                    event_location_id: 5
+                    venue_name: "Main Arena"
+                    city: "CDMX"
+                    country: "MX"
+                    tickets:
+                      - ticket_id: 1001
+                        category_label: "VIP"
+                        seat_label: "Row A Seat 1"
+                        unit_price: 1500.0
+                        ticket_status_id: 1
+                        ticket_status_name: "sold"
+                        checked_in_at: null
+                      - ticket_id: 1002
+                        category_label: "VIP"
+                        seat_label: "Row A Seat 2"
+                        unit_price: 1500.0
+                        ticket_status_id: 2
+                        ticket_status_name: "checked_in"
+                        checked_in_at: "2025-08-01T19:05:00.000Z"
+                  - event_id: 11
+                    event_name: "Tech Conference 2025"
+                    category: "Conference"
+                    description: "Software engineering talks"
+                    event_date: "2025-09-10"
+                    start_time: "09:00:00"
+                    end_time: "18:00:00"
+                    event_status_id: 3
+                    event_status_code: "completed"

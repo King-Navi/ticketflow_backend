@@ -54,6 +54,14 @@ paths:
     $ref: "./paths/organizer-me.yaml"
   /v1/reservations/reserve:
     $ref: "./paths/reservations-create.yaml"
+  /v1/ticket/buy :
+    $ref: "./paths/tickets-buy.yaml"
+  /v1/ticket/check-in :
+    $ref: "./paths/tickets-check-in.yaml"
+  /v1/ticket/my-event:
+    $ref: "./paths/tickets-my-event.yaml"
+  /v1/ticket/{ticketId}/qr:
+    $ref: "./paths/tickets-qr.yaml"
   
 components:
   securitySchemes:

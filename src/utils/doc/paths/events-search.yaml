@@ -1,18 +1,24 @@
 get:
   tags: [Event]
   operationId: searchEvents
-  summary: Busca eventos por NOMBRE, FECHA, CATEGORÍA o STATUS (exactamente uno)
+  summary: Busca eventos por nombre, fecha, categoría y/o status
   description: >
-    Búsqueda global de eventos filtrando por **un solo** criterio:
+    Búsqueda global de eventos filtrando por uno o varios criterios:
     `name` (coincidencia parcial, case-insensitive), `date` (YYYY-MM-DD),
-    `category` (coincidencia exacta) **o** `status` (puede ser id numérico o código, ej. `on_sale`).
-    Si se envían varios o ninguno, retorna 400.
+    `category` (coincidencia exacta) y `status` (puede ser id numérico o código,
+    ej. `on_sale`). Se pueden combinar varios filtros a la vez; sin embargo,
+    al menos uno de ellos debe enviarse. Si no se envía ninguno, retorna 400.
+
   parameters:
     - in: query
       name: name
-      description: Substring del nombre del evento (case-insensitive). No combinar con `date`, `category` ni `status`.
+      description: >
+        Substring del nombre del evento (case-insensitive).
+        Se puede combinar con `date`, `category` y/o `status`.
       required: false
-      schema: { type: string, maxLength: 200 }
+      schema:
+        type: string
+        maxLength: 200
       examples:
         parcial:
           value: "meetup"
@@ -21,50 +27,81 @@ get:
 
     - in: query
       name: date
-      description: Fecha exacta del evento (YYYY-MM-DD). No combinar con `name`, `category` ni `status`.
+      description: >
+        Fecha exacta del evento (YYYY-MM-DD). Se puede combinar con `name`,
+        `category` y/o `status`.
       required: false
-      schema: { type: string, format: date }
+      schema:
+        type: string
+        format: date
       examples:
         ejemplo:
           value: "2025-03-10"
 
     - in: query
       name: category
-      description: Categoría exacta del evento. No combinar con `name`, `date` ni `status`.
+      description: >
+        Categoría del evento. Puede enviarse una sola vez o repetirse para múltiples
+        valores (`?category=Meetup&category=Conference`). Se puede combinar con
+        `name`, `date` y/o `status`.
       required: false
-      schema: { type: string, maxLength: 100 }
+      schema:
+        type: array
+        items:
+          type: string
+          maxLength: 100
+      style: form
+      explode: true
       examples:
-        ejemplo:
-          value: "Technology"
+        unaCategoria:
+          value: [ "Technology" ]
+        variasCategorias:
+          value: [ "Meetup", "Conference" ]
 
     - in: query
       name: status
       description: >
-        Estado del evento. Acepta el **id numérico** (`event_status_id`) o el **código en minúsculas**
-        definido en el catálogo (`draft`, `scheduled`, `on_sale`, `paused`, `edit_lock`, `closed`, `completed`, `canceled`).
-        No combinar con `name`, `date` ni `category`.
+        Estado del evento. Acepta el **id numérico** (`event_status_id`) o el
+        **código en minúsculas** definido en el catálogo (`draft`, `scheduled`,
+        `on_sale`, `paused`, `edit_lock`, `closed`, `completed`, `canceled`).
+        Puede enviarse una sola vez o repetirse para múltiples valores
+        (`?status=on_sale&status=paused`). Se puede combinar con `name`, `date`
+        y/o `category`.
       required: false
       schema:
-        oneOf:
-          - type: integer
-            minimum: 1
-          - type: string
-            maxLength: 50
+        type: array
+        items:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: string
+              maxLength: 50
+      style: form
+      explode: true
       examples:
         porCodigo:
-          value: "on_sale"
+          value: [ "on_sale" ]
         porId:
-          value: 30
+          value: [ 3 ]
+        varios:
+          value: [ "on_sale", "paused" ]
 
     - in: query
       name: limit
       required: false
-      schema: { type: integer, minimum: 1, maximum: 500, default: 50 }
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 500
+        default: 50
 
     - in: query
       name: offset
       required: false
-      schema: { type: integer, minimum: 0, default: 0 }
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
 
     - in: query
       name: orderBy
@@ -86,7 +123,9 @@ get:
       name: full
       required: false
       description: Si es true, incluye asociaciones (company, location, tickets) si el backend lo soporta.
-      schema: { type: boolean, default: false }
+      schema:
+        type: boolean
+        default: false
 
   responses:
     "200":
@@ -139,10 +178,10 @@ get:
                     event_location_id: 3
                     created_at: "2025-01-15T10:12:00.000Z"
                     updated_at: "2025-01-15T10:12:00.000Z"
-            porCategoria:
-              summary: Búsqueda por category
+            porCategoriaMultiple:
+              summary: Búsqueda por varias categorías
               value:
-                count: 1
+                count: 2
                 rows:
                   - event_id: 222
                     event_name: "Frontend Meetup"
@@ -155,8 +194,19 @@ get:
                     event_location_id: 9
                     created_at: "2025-08-01T12:00:00.000Z"
                     updated_at: "2025-08-01T12:00:00.000Z"
-            porStatus:
-              summary: Búsqueda por status
+                  - event_id: 223
+                    event_name: "Backend Conference"
+                    category: "Conference"
+                    description: "Scalable APIs and databases"
+                    event_date: "2025-10-10"
+                    start_time: "10:00:00"
+                    end_time: "18:00:00"
+                    company_id: 4
+                    event_location_id: 9
+                    created_at: "2025-08-10T09:00:00.000Z"
+                    updated_at: "2025-08-10T09:00:00.000Z"
+            porStatusMultiple:
+              summary: Búsqueda por varios status
               value:
                 count: 3
                 rows:
@@ -169,19 +219,26 @@ get:
                     end_time: "23:00:00"
                     company_id: 2
                     event_location_id: 10
-                    event_status_id: 30
+                    event_status_id: 3
+                    created_at: "2025-04-20T11:00:00.000Z"
+                    updated_at: "2025-04-20T11:00:00.000Z"
+
     "400":
-      description: Error de validación (regla de un filtro o formato inválido)
+      description: Error de validación (filtros ausentes o formato inválido)
       content:
         application/json:
           schema:
             $ref: "../schemas/common.yaml#/Error"
           examples:
-            xor:
-              value: { message: "Exactly one of 'name', 'date', 'category' or 'status' must be provided." }
+            sinFiltros:
+              value:
+                message: "At least one of 'name', 'date', 'category' or 'status' must be provided."
             fecha:
-              value: { message: "date must be an ISO date or 'YYYY-MM-DD'." }
+              value:
+                message: "date must be an ISO date or 'YYYY-MM-DD'."
             statusInvalido:
-              value: { message: "Invalid event status filter." }
+              value:
+                message: "Invalid event status filter."
+
   security:
     - bearerAuth: []

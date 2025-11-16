@@ -1,0 +1,128 @@
+get:
+  tags: [Ticket]
+  operationId: getTicketQr
+  summary: Get QR payload for a specific ticket
+  description: >
+    Returns the minimal data required to render a QR code for a specific ticket
+    belonging to the authenticated attendee. The response contains the QR token
+    and the check-in path used by the scanner application. The caller is
+    responsible for encoding `qr_payload` as a QR image on the client.
+
+  parameters:
+    - in: path
+      name: ticketId
+      required: true
+      description: Numeric identifier of the ticket.
+      schema:
+        type: integer
+        minimum: 1
+
+  responses:
+    "200":
+      description: QR data for the requested ticket
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              ok:
+                type: boolean
+                example: true
+              ticket_id:
+                type: integer
+                description: ID of the ticket.
+              seat_label:
+                type: string
+                nullable: true
+                description: Human-readable seat label used on the ticket.
+              category_label:
+                type: string
+                nullable: true
+                description: Category label of the ticket (e.g. VIP, General, etc.).
+              token:
+                type: string
+                description: >
+                  Opaque QR token associated to this ticket. This value is stored
+                  in the `ticket_qr` table and is what identifies the ticket at
+                  check-in time.
+              check_in_path:
+                type: string
+                description: >
+                  Relative API path that the scanner will call to perform the
+                  check-in (e.g. `/v1/ticket/check-in`).
+              qr_payload:
+                type: string
+                description: >
+                  String to encode into the QR code. The scanner or client
+                  application can parse this value to extract the token and
+                  call the check-in endpoint.
+            required:
+              - ok
+              - ticket_id
+              - token
+              - check_in_path
+              - qr_payload
+          examples:
+            basic:
+              summary: QR payload for a ticket
+              value:
+                ok: true
+                ticket_id: 1234
+                seat_label: "Row A Seat 10"
+                category_label: "VIP"
+                token: "550e8400-e29b-41d4-a716-446655440000"
+                check_in_path: "/v1/ticket/check-in"
+                qr_payload: "/v1/ticket/check-in?token=550e8400-e29b-41d4-a716-446655440000"
+
+    "400":
+      description: Validation error (e.g. invalid or missing ticketId)
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            missingTicketId:
+              summary: Missing ticketId path parameter
+              value:
+                message: "ticketId param is required."
+
+    "401":
+      description: Missing or invalid authentication token
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            unauthorized:
+              value:
+                message: "Unauthorized"
+
+    "403":
+      description: The authenticated user is not an attendee
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            forbidden:
+              value:
+                message: "Forbidden"
+
+    "404":
+      description: Ticket or QR token not found for this attendee
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            ticketNotFound:
+              summary: Ticket does not belong to this attendee or does not exist
+              value:
+                message: "Ticket not found for this attendee."
+            qrNotFound:
+              summary: QR token missing for this ticket
+              value:
+                message: "QR token not found for this ticket."
+
+  security:
+    - bearerAuth: []

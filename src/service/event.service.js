@@ -4,7 +4,7 @@ import EventLocationRepository from "../repositories/eventLocation.repository.js
 import OrganizerRepository from "../repositories/organizer.repository.js";
 import { ConflictError } from "./error/classes.js";
 import { Unauthorized } from "../utils/errors/error.400.js";
-import {EVENT_STATUS_CODE} from "..//model_db/utils/eventStatus.js"
+import { EVENT_STATUS_CODE } from "..//model_db/utils/eventStatus.js"
 const eventRepo = new EventRepository();
 const companyRepo = new CompanyRepository();
 const locationRepo = new EventLocationRepository();
@@ -221,19 +221,34 @@ export async function searchCompanyEventsService({
   status,
   ...rest
 } = {}) {
-  const provided = [
-    !!(name?.trim?.()),
-    !!(date?.toString?.()),
-    !!(category?.trim?.()),
-    !!(status ?? null)
-  ].filter(Boolean).length;
+  try {
+    const hasName =
+      typeof name === "string" && name.trim() !== "";
 
-  if (provided !== 1) {
-    throw new Error("Exactly one of 'name', 'date', 'category' or 'status' must be provided.");
+    const hasDate =
+      date != null && String(date).trim() !== "";
+
+    const hasCategory = Array.isArray(category)
+      ? category.some((c) => String(c).trim() !== "")
+      : typeof category === "string" && category.trim() !== "";
+
+    const hasStatus = Array.isArray(status)
+      ? status.length > 0
+      : status != null && String(status).trim() !== "";
+
+    const anyProvided = hasName || hasDate || hasCategory || hasStatus;
+
+    if (!anyProvided) {
+      throw new Error(
+        "At least one of 'name', 'date', 'category' or 'status' must be provided."
+      );
+    }
+
+    const opts = normalizeOptions(rest);
+    return eventRepo.searchOneFilter({ name, date, category, status, ...opts });
+  } catch (error) {
+    throw error
   }
-
-  const opts = normalizeOptions(rest);
-  return eventRepo.searchOneFilter({ name, date, category, status, ...opts });
 }
 
 function normalizeOptions(opts = {}) {

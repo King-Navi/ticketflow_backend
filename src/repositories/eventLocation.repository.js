@@ -134,5 +134,22 @@ export default class EventLocationRepository {
   }
 
 
+  async findById(eventLocationId, { transaction } = {}) {
+    if (!eventLocationId) throw new Error("eventLocationId is required.");
+
+    try {
+      const row = await this.model.findByPk(eventLocationId, { transaction });
+      return row ? row.get({ plain: true }) : null;
+    } catch (error) {
+      if (error instanceof Sequelize.ConnectionError) {
+        throw new Error("Cannot connect to the database.");
+      }
+      if (error instanceof Sequelize.DatabaseError) {
+        throw new Error("Database error occurred.");
+      }
+      throw error;
+    }
+  }
+
   
 }

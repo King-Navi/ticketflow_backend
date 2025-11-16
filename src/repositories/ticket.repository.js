@@ -151,7 +151,7 @@ export default class TicketRepository {
         reissued: row.out_reissued,
       };
     } catch (error) {
-      if(process.env.DEBUG === "true"){
+      if (process.env.DEBUG === "true") {
         console.log(error)
       }
       if (error instanceof Sequelize.ConnectionError) {
@@ -165,4 +165,186 @@ export default class TicketRepository {
     }
   }
 
+  async findTicketWithEventById(ticketId, { transaction } = {}) {
+    if (!ticketId) {
+      throw new Error("ticketId is required.");
+    }
+
+    try {
+      const rows = await this.sequelize.query(
+        `
+        SELECT
+          ticket_id,
+          ticket_status_id,
+          category_label,
+          seat_label,
+          unit_price,
+          checked_in_at,
+          event_id,
+          event_name,
+          event_date,
+          start_time,
+          end_time,
+          event_location_id
+        FROM fn02_get_ticket_with_event(:ticketId);
+        `,
+        {
+          type: QueryTypes.SELECT,
+          transaction,
+          replacements: { ticketId },
+        }
+      );
+
+      if (!rows || rows.length === 0) {
+        return null;
+      }
+
+      // It should return at most one row for a given ticket_id
+      return rows[0];
+    } catch (error) {
+      if (error instanceof Sequelize.ConnectionError) {
+        throw new Error("Cannot connect to the database.");
+      }
+      if (error instanceof Sequelize.DatabaseError) {
+        throw new Error("Database error occurred.");
+      }
+      throw error;
+    }
+  }
+
+
+  async updateStatusAndCheckInAt(
+    ticketId,
+    ticketStatusId,
+    checkInAt,
+    { transaction } = {}
+  ) {
+    if (!ticketId) {
+      throw new Error("ticketId is required.");
+    }
+    if (!ticketStatusId) {
+      throw new Error("ticketStatusId is required.");
+    }
+
+    const updatePayload = {
+      ticket_status_id: ticketStatusId,
+      updated_at: new Date(),
+    };
+
+    if (checkInAt !== undefined) {
+      updatePayload.checked_in_at = checkInAt;
+    }
+
+    try {
+      const [affectedCount] = await this.model.update(updatePayload, {
+        where: { ticket_id: ticketId },
+        transaction,
+      });
+
+      if (affectedCount === 0) {
+        return null;
+      }
+
+      const row = await this.model.findByPk(ticketId, { transaction });
+      return row ? row.get({ plain: true }) : null;
+    } catch (error) {
+      if (error instanceof Sequelize.ConnectionError) {
+        throw new Error("Cannot connect to the database.");
+      }
+      if (error instanceof Sequelize.DatabaseError) {
+        throw new Error("Database error occurred.");
+      }
+      throw error;
+    }
+  }
+
+  async findByIdAndAttendee(ticketId, attendeeId, { transaction } = {}) {
+    if (!ticketId) {
+      throw new Error("ticketId is required.");
+    }
+    if (!attendeeId) {
+      throw new Error("attendeeId is required.");
+    }
+
+    try {
+      const rows = await this.sequelize.query(
+        `
+        SELECT
+          t.ticket_id,
+          t.category_label,
+          t.seat_label,
+          t.unit_price,
+          t.checked_in_at,
+          t.payment_id,
+          t.ticket_status_id,
+          t.event_seat_id,
+          t.created_at,
+          t.updated_at
+        FROM ticket AS t
+        JOIN payment AS p
+          ON p.payment_id = t.payment_id
+        WHERE t.ticket_id = :ticketId
+          AND p.attendee_id = :attendeeId;
+        `,
+        {
+          type: QueryTypes.SELECT,
+          transaction,
+          replacements: { ticketId, attendeeId },
+        }
+      );
+
+      if (!rows || rows.length === 0) {
+        return null;
+      }
+
+      return rows[0];
+    } catch (error) {
+      if (error instanceof Sequelize.ConnectionError) {
+        throw new Error("Cannot connect to the database.");
+      }
+      if (error instanceof Sequelize.DatabaseError) {
+        throw new Error("Database error occurred.");
+      }
+      throw error;
+    }
+  }
+  
+  async findEventsWithTicketsByAttendee(
+    attendeeId,
+    { eventStatusCode = null, transaction } = {}
+  ) {
+    if (!attendeeId) {
+      throw new Error("attendeeId is required.");
+    }
+
+    try {
+      const rows = await this.sequelize.query(
+        `
+        SELECT *
+        FROM fn03_get_attendee_events_with_tickets(
+          :attendeeId,
+          :eventStatusCode
+        );
+        `,
+        {
+          type: QueryTypes.SELECT,
+          transaction,
+          replacements: {
+            attendeeId,
+            eventStatusCode,
+          },
+        }
+      );
+      return rows;
+    } catch (error) {
+      if (error instanceof Sequelize.ConnectionError) {
+        throw new Error("Cannot connect to the database.");
+      }
+      if (error instanceof Sequelize.DatabaseError) {
+        throw new Error("Database error occurred.");
+      }
+      throw error;
+    }
+  }
 }
+

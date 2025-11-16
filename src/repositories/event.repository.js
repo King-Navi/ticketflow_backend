@@ -201,52 +201,87 @@ export default class EventRepository {
     order = [["event_date", "ASC"], ["start_time", "ASC"]],
     transaction
   } = {}) {
-    const provided = [
-      name != null && String(name).trim() !== "",
-      date != null && String(date).trim() !== "",
-      category != null && String(category).trim() !== "",
-      status != null && String(status).trim() !== ""
-    ].filter(Boolean).length;
+    const hasName =
+      name != null && String(name).trim() !== "";
+    const hasDate =
+      date != null && String(date).trim() !== "";
+    const hasCategory = Array.isArray(category)
+      ? category.some((c) => String(c).trim() !== "")
+      : category != null && String(category).trim() !== "";
+    const hasStatus = Array.isArray(status)
+      ? status.length > 0
+      : status != null && String(status).trim() !== "";
 
-    if (provided !== 1) {
-      throw new Error("Exactly one of 'name', 'date', 'category' or 'status' must be provided.");
+    if (!hasName && !hasDate && !hasCategory && !hasStatus) {
+      throw new Error(
+        "At least one of 'name', 'date', 'category' or 'status' must be provided."
+      );
     }
 
     const where = {};
 
-    if (name && String(name).trim() !== "") {
+    if (hasName) {
       const pattern = `%${escapeLike(String(name).trim())}%`;
       where.event_name = { [Op.iLike]: pattern };
     }
 
-    if (date && String(date).trim() !== "") {
-      const d = date instanceof Date ? date.toISOString().slice(0, 10) : String(date);
+    if (hasDate) {
+      const d =
+        date instanceof Date
+          ? date.toISOString().slice(0, 10)
+          : String(date);
       where.event_date = d;
     }
 
-    if (category && String(category).trim() !== "") {
-      where.category = String(category).trim();
+    if (hasCategory) {
+      if (Array.isArray(category)) {
+        const cats = category
+          .map((c) => String(c).trim())
+          .filter((c) => c !== "");
+        if (cats.length > 0) {
+          where.category = { [Op.in]: cats };
+        }
+      } else {
+        where.category = String(category).trim();
+      }
     }
 
-    if (status && String(status).trim() !== "") {
-      let eventStatusId = null;
-      const raw = String(status).trim();
+    if (hasStatus) {
+      const toStatusId = (raw) => {
+        const s = String(raw).trim();
+        if (!s) return null;
 
-      if (/^\d+$/.test(raw)) {
-        eventStatusId = Number(raw);
+        if (/^\d+$/.test(s)) {
+          return Number(s);
+        }
+
+        const normalized = s.toLowerCase();
+        return EVENT_STATUS_CODE[normalized] ?? null;
+      };
+
+      if (Array.isArray(status)) {
+        const ids = status
+          .map(toStatusId)
+          .filter((id) => id != null);
+
+        if (ids.length === 0) {
+          const err = new Error("Invalid event status filter.");
+          err.code = "INVALID_EVENT_STATUS";
+          err.statusCode = 400;
+          throw err;
+        }
+
+        where.event_status_id = { [Op.in]: ids };
       } else {
-        const normalized = raw.toLowerCase();
-        eventStatusId = EVENT_STATUS_CODE[normalized];
+        const id = toStatusId(status);
+        if (id == null) {
+          const err = new Error("Invalid event status filter.");
+          err.code = "INVALID_EVENT_STATUS";
+          err.statusCode = 400;
+          throw err;
+        }
+        where.event_status_id = id;
       }
-
-      if (!eventStatusId) {
-        const err = new Error("Invalid event status filter.");
-        err.code = "INVALID_EVENT_STATUS";
-        err.statusCode = 400;
-        throw err;
-      }
-
-      where.event_status_id = eventStatusId;
     }
 
     return this.model.findAndCountAll({
