@@ -60,8 +60,10 @@ paths:
     $ref: "./paths/tickets-check-in.yaml"
   /v1/ticket/my-event:
     $ref: "./paths/tickets-my-event.yaml"
-  /v1/ticket/{ticketId}/qr:
+  /v1/ticket/{ticketId}/qr: 
     $ref: "./paths/tickets-qr.yaml"
+  /v1/ticket/:ticketId/refund:
+    $ref: "./paths/ticket-refund.yaml"
   
 components:
   securitySchemes:

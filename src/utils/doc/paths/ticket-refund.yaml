@@ -1,0 +1,207 @@
+post:
+  tags: [Ticket]
+  operationId: refundTicket
+  summary: Request a refund for a single ticket
+  description: >
+    Creates a partial refund for a **single ticket** owned by the authenticated attendee.
+    This endpoint:
+    - Validates that the ticket belongs to the current attendee.
+    - Checks that the ticket is not already refunded, canceled, or checked-in.
+    - Verifies that the venue allows refunds and that the refund window has not expired.
+    - Creates a refund record in the local database.
+    - Calls Stripe to create a partial refund on the original PaymentIntent (for this ticket's price).
+    - Updates the ticket status to `REFUNDED` and frees the associated event seat when the refund is processed.
+
+    Only one refund record is allowed per ticket. If a refund already exists for this ticket,
+    the request will fail with HTTP 409 (Conflict).
+
+  parameters:
+    - in: path
+      name: ticketId
+      required: true
+      description: Numeric ID of the ticket to refund. Must belong to the authenticated attendee.
+      schema:
+        type: integer
+        minimum: 1
+
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            reason:
+              type: string
+              description: >
+                Human-readable explanation for the refund request. Stored in the refund record
+                and can be used for support or auditing.
+              maxLength: 500
+          required:
+            - reason
+        examples:
+          simpleReason:
+            summary: Basic refund reason
+            value:
+              reason: "I can no longer attend the event."
+          venuePolicyReason:
+            summary: Refund within venue policy window
+            value:
+              reason: "Travel plan changed, requesting refund before the deadline."
+
+  responses:
+    "200":
+      description: Refund created and Stripe refund attempt executed
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              ok:
+                type: boolean
+                example: true
+              refund_id:
+                type: integer
+                description: Internal refund identifier in the local database.
+              ticket_id:
+                type: integer
+                description: Refunded ticket ID.
+              amount:
+                type: number
+                format: float
+                description: Refunded amount in MXN for this ticket.
+              currency:
+                type: string
+                description: ISO currency code used for the refund.
+                example: "mxn"
+              stripe_refund_id:
+                type: string
+                nullable: true
+                description: >
+                  Stripe refund identifier (e.g. `re_123...`). Can be null if the Stripe call
+                  failed and the refund was marked as rejected.
+              stripe_status:
+                type: string
+                description: >
+                  Raw Stripe refund status (e.g. `succeeded`, `pending`, `failed`, `canceled`, `unknown`).
+              internal_status_id:
+                type: integer
+                description: >
+                  Local refund status identifier, mapped from Stripe status
+                  (e.g. REQUESTED, APPROVED, PROCESSED, REJECTED).
+            required:
+              - ok
+              - refund_id
+              - ticket_id
+              - amount
+              - currency
+              - stripe_status
+              - internal_status_id
+          examples:
+            refundProcessed:
+              summary: Refund processed successfully
+              value:
+                ok: true
+                refund_id: 42
+                ticket_id: 1001
+                amount: 1500.0
+                currency: "mxn"
+                stripe_refund_id: "re_1QABCDEFxyz123"
+                stripe_status: "succeeded"
+                internal_status_id: 3
+            refundPending:
+              summary: Refund created but pending in Stripe
+              value:
+                ok: true
+                refund_id: 43
+                ticket_id: 1002
+                amount: 800.0
+                currency: "mxn"
+                stripe_refund_id: "re_1QGHIJKLxyz456"
+                stripe_status: "pending"
+                internal_status_id: 2
+
+    "400":
+      description: Validation error or business rule violation
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Error message describing what went wrong.
+              meta:
+                type: object
+                nullable: true
+                description: Optional extra context for debugging.
+          examples:
+            missingReason:
+              summary: Reason missing or invalid
+              value:
+                message: "reason is required and must be a string."
+                meta: null
+            nonRefundableVenue:
+              summary: Venue does not allow refunds
+              value:
+                message: "Refunds are not allowed for this venue."
+                meta: null
+            refundWindowExpired:
+              summary: Refund requested after venue refund deadline
+              value:
+                message: "Refund window has expired."
+                meta:
+                  refundable_until: "2025-08-01T18:00:00.000Z"
+
+    "404":
+      description: Ticket not found for the authenticated attendee
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+              meta:
+                type: object
+                nullable: true
+          examples:
+            ticketNotFound:
+              summary: Ticket does not belong to this attendee
+              value:
+                message: "Ticket not found for this attendee."
+                meta: null
+
+    "409":
+      description: Refund conflict (e.g. ticket already refunded, canceled or has an existing refund)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+              meta:
+                type: object
+                nullable: true
+          examples:
+            alreadyRefunded:
+              summary: Ticket already refunded
+              value:
+                message: "Ticket is already refunded."
+                meta: null
+            alreadyHasRefundRecord:
+              summary: Refund record already exists for ticket
+              value:
+                message: "This ticket already has a refund record."
+                meta: null
+            checkedInTicket:
+              summary: Checked-in tickets cannot be refunded
+              value:
+                message: "Checked-in tickets cannot be refunded."
+                meta: null
+            canceledTicket:
+              summary: Canceled tickets cannot be refunded
+              value:
+                message: "Canceled tickets cannot be refunded."
+                meta: null
