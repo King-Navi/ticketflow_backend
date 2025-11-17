@@ -13,10 +13,7 @@ export async function createReservationController(req, res) {
       event_id,
       attendee_id,
       event_seat_id,
-      expiration_at,
-      {
-        transaction: req.tx, // optional
-      }
+      expiration_at
     );
 
     return res.status(201).json(result);

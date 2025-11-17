@@ -1,11 +1,11 @@
 post:
   tags: [Reservations]
   operationId: createReservation
-  summary: Crea una reserva de un asiento de evento
+  summary: Crea una reserva de uno o más asientos de evento
   description: >
-    Crea una reserva (hold) para un `event_seat` de un evento que esté en venta.
-    Valida que el evento exista y esté `on_sale`, que el asiento pertenezca al evento,
-    que no haya una reserva activa/no expirada y que no exista un ticket bloqueante.
+    Crea una o varias reservas (holds) para uno o más `event_seat` de un evento que esté en venta.
+    Valida que el evento exista y esté `on_sale`, que cada asiento pertenezca al evento,
+    que no haya reservas activas/no expiradas y que no existan tickets bloqueantes.
     La expiración real se limita a un máximo de 15 minutos desde la creación,
     aunque el cliente envíe un valor mayor.
   security:
@@ -26,9 +26,19 @@ post:
               minimum: 1
               example: 42
             event_seat_id:
-              type: integer
-              minimum: 1
-              example: 555
+              description: >
+                Puede ser un único ID de asiento de evento (integer) o un arreglo de IDs (integer[]).
+                Cuando se envía un arreglo, el servicio intentará crear una reserva por cada asiento.
+              oneOf:
+                - type: integer
+                  minimum: 1
+                  example: 555
+                - type: array
+                  minItems: 1
+                  items:
+                    type: integer
+                    minimum: 1
+                  example: [555, 556, 557]
             expiration_at:
               type: string
               format: date-time
@@ -38,43 +48,46 @@ post:
               example: "2025-11-06T15:30:00Z"
   responses:
     "201":
-      description: Reserva creada y asiento marcado como reservado.
+      description: Reserva(s) creada(s) y asiento(s) marcado(s) como reservado(s).
       content:
         application/json:
           schema:
             type: object
-            required: [ok, message, reservation]
+            required: [event, reservations, eventSeats]
             properties:
-              ok:
-                type: boolean
-                example: true
-              message:
-                type: string
-                example: "Reservation created and seat marked as reserved."
-              reservation:
-                type: object
-                properties:
-                  reservation_id:
-                    type: integer
-                    example: 901
-                  attendee_id:
-                    type: integer
-                    example: 101
-                  event_seat_id:
-                    type: integer
-                    example: 555
-                  status:
-                    type: string
-                    example: "active"
-                  expiration_at:
-                    type: string
-                    format: date-time
               event:
                 type: object
-                description: Evento validado (opcional, según lo devuelto por el service).
-              eventSeat:
-                type: object
-                description: Asiento del evento ya actualizado a `reserved`.
+                description: Evento validado (devuelto por el service).
+              reservations:
+                type: array
+                description: >
+                  Lista de reservas creadas. Si se envió un único `event_seat_id`,
+                  normalmente contendrá un solo elemento.
+                items:
+                  type: object
+                  properties:
+                    reservation_id:
+                      type: integer
+                      example: 901
+                    attendee_id:
+                      type: integer
+                      example: 101
+                    event_seat_id:
+                      type: integer
+                      example: 555
+                    status:
+                      type: string
+                      example: "active"
+                    expiration_at:
+                      type: string
+                      format: date-time
+                      example: "2025-11-06T15:45:00Z"
+              eventSeats:
+                type: array
+                description: Asientos del evento actualizados a `reserved`.
+                items:
+                  type: object
+                  description: Representación del asiento del evento ya actualizado.
     "400":
       description: Petición inválida (faltan campos o formato).
       content:
@@ -107,29 +120,34 @@ post:
             properties:
               msg:
                 type: string
-                example: "This seat already has an active reservation."
+                example: "This seat is already reserved by someone else."
               meta:
                 type: object
                 description: Información adicional del conflicto.
           examples:
             seat_reserved:
               value:
-                msg: "This seat already has an active reservation."
+                msg: "This seat is already reserved by someone else."
                 meta:
                   reservation_id: 345
                   expires_at: "2025-11-06T15:45:00Z"
+                  reserved_by_attendee_id: 101
+                  current_attendee_id: 202
+                  event_seat_id: 555
             ticket_blocking:
               value:
                 msg: "This seat already has a sold/checked-in ticket."
                 meta:
                   ticket_id: 777
                   ticket_status_id: 1
+                  event_seat_id: 555
             seat_not_available:
               value:
                 msg: "This seat is not available for reservation."
                 meta:
                   current_status_id: 4
                   allowed_status_id: 1
+                  event_seat_id: 555
     "503":
       description: No se pudo conectar a la base de datos.
       content:
