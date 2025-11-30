@@ -7,7 +7,7 @@ export default class EventSeatStatusRepository {
   }
 
   /**
-   * Get status row by its status_name (e.g. "available", "reserved", "sold")
+   * Get status row by its statusName (e.g. "available", "reserved", "sold")
    *
    * @param {string} statusName
    * @returns {Promise<{event_seat_status_id:number,status_name:string}|null>}

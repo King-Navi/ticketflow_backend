@@ -6,7 +6,7 @@ import { BadRequest, Conflict } from "../utils/errors/error.400.js";
 import { EVENT_SEAT_STATUS } from "../model_db/utils/eventSeatStatus.js";
 import { sequelizeCon } from "../config/initPostgre.js";
 
-const MAX_RESERVATION_MINUTES = 15;
+const MAX_RESERVATION_MINUTES = 15 * 60 * 1000;
 
 const eventRepo = new EventRepository();
 const eventSeatRepo = new EventSeatRepository();
@@ -44,7 +44,7 @@ export async function createReservationService(
 
     const now = new Date();
     const maxExpiration = new Date(
-        now.getTime() + MAX_RESERVATION_MINUTES * 60 * 1000
+        now.getTime() + MAX_RESERVATION_MINUTES
     );
 
     let clientExpiration = expiration_at ? new Date(expiration_at) : null;
