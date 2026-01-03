@@ -24,7 +24,7 @@ get:
       content:
         application/json:
           schema:
-            $ref: "../schemas/eventLocation.layout.yaml#/EventLocationFullLayoutResponse"
+            $ref: "../schemas/event-location-layout.scheme.yaml#/EventLocationFullLayoutResponse"
           examples:
             example:
               value:

@@ -31,7 +31,7 @@ const oncePerFive = rateLimitOnce({ windowMs: 5 * 60 * 1000 });
 
 router.post(`${LOGIN_ROUTE}/code`,
     validateBody(emailOnlySchema),
-    oncePerFive,
+    //oncePerFive,
     sendRecoverCodeToEmailController
 );
 

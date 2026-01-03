@@ -14,7 +14,7 @@ put:
     content:
       application/json:
         schema:
-          $ref: "../schemas/eventseats.yaml#/EventWithInventoryCreateRequest"
+          $ref: "../schemas/event-seats.scheme.yaml#/EventWithInventoryCreateRequest"
         examples:
           minimal:
             value:
@@ -54,7 +54,7 @@ put:
       content:
         application/json:
           schema:
-            $ref: "../schemas/eventseats.yaml#/EventWithInventoryCreateResponse"
+            $ref: "../schemas/event-seats.scheme.yaml#/EventWithInventoryCreateResponse"
           examples:
             created:
               value:

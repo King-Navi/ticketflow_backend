@@ -25,7 +25,7 @@ paths:
   /v1/login:
     $ref: "./paths/auth-login.yaml"
   /v1/user/register:
-    $ref: "./paths/auth-register.yaml"
+    $ref: "./paths/auth-register.scheme.yaml"
   /v1/company/:companyId/events:
     $ref: "./paths/company-events.yaml"
   /v1/event/new:
@@ -52,6 +52,10 @@ paths:
     $ref: "./paths/organizer-update.yaml"
   /v1/organizer/me:
     $ref: "./paths/organizer-me.yaml"
+  /v1/report/sales:
+    $ref: "./paths/sales-report.yaml"
+  /v1/report/sales/details:
+    $ref: "./paths/sales-details.yaml"
   /v1/reservations/reserve:
     $ref: "./paths/reservations-create.yaml"
   /v1/ticket/buy :
@@ -87,7 +91,7 @@ components:
       $ref: "./schemas/event.yaml#/EventListResponse"
 
     EventLocation:
-      $ref: "./schemas/eventLocation.yaml#/EventLocation"
+      $ref: "./schemas/event-location.scheme.yaml#/EventLocation"
 
     OrganizerBasicInfoResponse:
       $ref: "./schemas/organizer.yaml#/OrganizerBasicInfoResponse"
@@ -97,36 +101,46 @@ components:
       $ref: "./schemas/organizer.yaml#/UpdateOrganizerResponse"
 
     EventLocationFullLayoutResponse:
-      $ref: "./schemas/eventLocation.layout.yaml#/EventLocationFullLayoutResponse"
+      $ref: "./schemas/event-location-layout.scheme.yaml#/EventLocationFullLayoutResponse"
     EventLocationAddress:
-      $ref: "./schemas/eventLocation.layout.yaml#/EventLocationAddress"
+      $ref: "./schemas/event-location-layout.scheme.yaml#/EventLocationAddress"
     EventLocationSection:
-      $ref: "./schemas/eventLocation.layout.yaml#/EventLocationSection"
+      $ref: "./schemas/event-location-layout.scheme.yaml#/EventLocationSection"
     EventLocationSeat:
-      $ref: "./schemas/eventLocation.layout.yaml#/EventLocationSeat"
+      $ref: "./schemas/event-location-layout.scheme.yaml#/EventLocationSeat"
 
     EventWithInventoryCreateRequest:
-      $ref: "./schemas/eventseats.yaml#/EventWithInventoryCreateRequest"
+      $ref: "./schemas/event-seats.scheme.yaml#/EventWithInventoryCreateRequest"
     EventWithInventoryCreateResponse:
-      $ref: "./schemas/eventseats.yaml#/EventWithInventoryCreateResponse"
+      $ref: "./schemas/event-seats.scheme.yaml#/EventWithInventoryCreateResponse"
     EventPayload:
-      $ref: "./schemas/eventseats.yaml#/EventPayload"
+      $ref: "./schemas/event-seats.scheme.yaml#/EventPayload"
     InventoryItem:
-      $ref: "./schemas/eventseats.yaml#/InventoryItem"
+      $ref: "./schemas/event-seats.scheme.yaml#/InventoryItem"
     InventoryCreatedItem:
-      $ref: "./schemas/eventseats.yaml#/InventoryCreatedItem"
+      $ref: "./schemas/event-seats.scheme.yaml#/InventoryCreatedItem"
     Counts:
-      $ref: "./schemas/eventseats.yaml#/Counts"
+      $ref: "./schemas/event-seats.scheme.yaml#/Counts"
 
     RegisterRequest:
-      $ref: "./schemas/authRegister.yaml#/RegisterRequest"
+      $ref: "./schemas/auth-register.scheme.yaml#/RegisterRequest"
     RegisterEnvelope:
-      $ref: "./schemas/authRegister.yaml#/RegisterEnvelope"
+      $ref: "./schemas/auth-register.scheme.yaml#/RegisterEnvelope"
     RegisterResult:
-      $ref: "./schemas/authRegister.yaml#/RegisterResult"
+      $ref: "./schemas/auth-register.scheme.yaml#/RegisterResult"
 
     EventImageUploadResponse:
       $ref: "./schemas/event-image.yaml#/EventImageUploadResponse"
 
     PasswordForgotRequest:
       $ref: "./schemas/auth-password.yaml#/PasswordForgotRequest"
+
+    OrganizationSalesReportEnvelope:
+      $ref: "./schemas/sales.yaml#/OrganizationSalesReportEnvelope"
+    OrganizationSalesReportItem:
+      $ref: "./schemas/sales.yaml#/OrganizationSalesReportItem"
+
+    TicketSalesDetailEnvelope:
+      $ref: "./schemas/sales.yaml#/TicketSalesDetailEnvelope"
+    TicketSalesDetailItem:
+      $ref: "./schemas/sales.yaml#/TicketSalesDetailItem"

@@ -1,4 +1,3 @@
-import { sendEmail } from "../messaging/emailService.js"
 import CredentialRepository from "../repositories/credential.repository.js";
 import AttendeeRepository from "../repositories/attendee.repository.js";
 import OrganizerRepository from "../repositories/organizer.repository.js";
@@ -7,13 +6,12 @@ import codeManager from "../utils/codeManager.js";
 import { loginService } from "./login.service.js";
 import { generateToken } from "../utils/jwt.js";
 import { resolveUserRole, ROLE } from "../model_db/utils/role.js";
+import { loadVerificationCodeTemplate } from "../messaging/loadEmailTemplate.js";
+import { sendEmail } from "../messaging/emailService.js"
 
 const credentialRepo = new CredentialRepository();
 const attendeeRepo = new AttendeeRepository();
 const organizerRepo = new OrganizerRepository();
-
-
-
 
 /**
  * Handles user registration workflow.
@@ -144,21 +142,22 @@ export async function recoverEmailService({ email, code }) {
 }
 
 export async function sendRecoverCodeToEmailService(email) {
-  try {
-    const emailExists = await credentialRepo.isEmailTaken(email)
-    if (!emailExists) {
-      throw new NotFound("Email not found")
+    try {
+        const emailExists = await credentialRepo.isEmailTaken(email)
+        if (!emailExists) {
+            throw new NotFound("Email not found")
+        }
+        const code = codeManager.storeCode(email);
+        if (process.env.DEBUG === 'true') {
+            console.log(code)
+        }
+        const htmlContent = loadVerificationCodeTemplate(code);
+        await sendEmail({
+            to: email,
+            subject: "Código de recuperación de cuenta",
+            html: htmlContent
+        });
+    } catch (error) {
+        throw error;
     }
-    const code = codeManager.storeCode(email);
-    if (process.env.DEBUG === 'true') {
-      console.log(code)
-    }
-    await sendEmail({
-      to: email,
-      subject: "Código de recuperación de cuenta",
-      text: `Tu código de recuperación es: ${code}\nEste código expirará en 10 minutos.`,
-    });
-  } catch (error) {
-    throw error;
-  }
 }

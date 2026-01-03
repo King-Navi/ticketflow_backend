@@ -5,7 +5,6 @@ import {loginController}  from '../controller/login.controller.js'
 
 const router = express.Router();
 
-//TODO: test
 const LOGIN_ROUTE = "/v1/login";
 
 

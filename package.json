@@ -16,7 +16,8 @@
   "main": "src/server.js",
   "scripts": {
     "start": "nodemon src/index.js",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test": "DOTENV_QUIET=1 NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:int": "DOTENV_QUIET=1 NODE_OPTIONS=--experimental-vm-modules jest -c jest.integration.config.js --detectOpenHandles",
     "prepare": "husky",
     "postgre:build": "node src/config/generate.models.js",
     "swagger:docs": "",

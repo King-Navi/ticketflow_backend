@@ -10,7 +10,6 @@ export async function registerController(req, res) {
             result,
         });
     } catch (error) {
-        //TODO: manage errors
         return res.status(500).json({
             error: "Internal server error during registration.",
             details: error.message,
@@ -38,8 +37,16 @@ export async function sendRecoverCodeToEmailController(req, res) {
             message: "Code send"
         });
     } catch (error) {
+        if (process.env.DEBUG === "true") {
+            console.error(error)
+        }
+        if (error.code == 404) {
+            return res.status(400).json({
+                message: "Try again later"
+            });
+        }
     }
     return res.status(400).json({
-        message: "OK"
+        message: "Failed"
     });
 }

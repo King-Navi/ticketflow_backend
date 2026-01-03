@@ -1,0 +1,106 @@
+get:
+  tags: [Sales]
+  operationId: getOrganizationSalesReport
+  summary: Reporte agregado de ventas por organización y evento
+  description: |
+    Devuelve un reporte agregado por evento, filtrable por compañía y rango de fechas.
+    Requiere autenticación y rol ORGANIZER o ADMIN.
+  security:
+    - bearerAuth: []
+  parameters:
+    - in: query
+      name: companyId
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+      description: ID de la compañía.
+      example: 1
+
+    - in: query
+      name: startDate
+      required: false
+      schema:
+        type: string
+        format: date
+      description: Fecha inicial (YYYY-MM-DD).
+      example: "2026-01-01"
+
+    - in: query
+      name: endDate
+      required: false
+      schema:
+        type: string
+        format: date
+      description: Fecha final (YYYY-MM-DD).
+      example: "2026-01-31"
+
+  responses:
+    "200":
+      description: Reporte obtenido correctamente
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/sales.yaml#/OrganizationSalesReportEnvelope"
+          examples:
+            ejemplo:
+              value:
+                message: "Organization sales report fetched successfully."
+                count: 2
+                data:
+                  - company_id: 1
+                    organizacion: "Mi Empresa"
+                    event_id: 10
+                    evento: "Concierto X"
+                    fecha_evento: "2026-01-15"
+                    cantidad_boletos_vendidos: "120"
+                    total_ingresos: "54000.00"
+                  - company_id: 1
+                    organizacion: "Mi Empresa"
+                    event_id: 11
+                    evento: "Festival Y"
+                    fecha_evento: "2026-01-10"
+                    cantidad_boletos_vendidos: "80"
+                    total_ingresos: "25000.00"
+
+    "400":
+      description: Error de validación (query inválido)
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            companyId_invalido:
+              value: { message: "companyId must be a positive integer." }
+            fechas_invertidas:
+              value: { message: "startDate must be less than or equal to endDate." }
+
+    "401":
+      description: No autenticado
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            no_token:
+              value: { message: "Unauthorized" }
+
+    "403":
+      description: No autorizado (rol insuficiente)
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            forbidden:
+              value: { message: "Forbidden" }
+
+    "500":
+      description: Error interno
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/common.yaml#/Error"
+          examples:
+            error:
+              value: { message: "Error fetching organization sales report." }

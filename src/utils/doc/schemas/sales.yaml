@@ -1,0 +1,137 @@
+OrganizationSalesReportItem:
+  type: object
+  additionalProperties: false
+  required:
+    - company_id
+    - organizacion
+    - event_id
+    - evento
+    - fecha_evento
+    - cantidad_boletos_vendidos
+    - total_ingresos
+  properties:
+    company_id:
+      type: integer
+      minimum: 1
+      example: 1
+    organizacion:
+      type: string
+      example: "Mi Empresa"
+    event_id:
+      type: integer
+      minimum: 1
+      example: 10
+    evento:
+      type: string
+      example: "Concierto X"
+    fecha_evento:
+      type: string
+      format: date
+      example: "2026-01-15"
+    cantidad_boletos_vendidos:
+      type: string
+      description: Cantidad agregada (viene como string desde la vista/DB).
+      example: "120"
+    total_ingresos:
+      type: string
+      description: Total agregado (viene como string desde la vista/DB).
+      example: "54000.00"
+
+OrganizationSalesReportEnvelope:
+  type: object
+  additionalProperties: false
+  required: [message, count, data]
+  properties:
+    message:
+      type: string
+      example: "Organization sales report fetched successfully."
+    count:
+      type: integer
+      minimum: 0
+      example: 2
+    data:
+      type: array
+      items:
+        $ref: "#/OrganizationSalesReportItem"
+
+TicketSalesDetailItem:
+  type: object
+  additionalProperties: false
+  required:
+    - company_id
+    - organizacion
+    - event_id
+    - evento
+    - fecha_evento
+    - ticket_id
+    - precio_pagado
+    - precio_original
+    - zona
+    - fila
+    - asiento
+    - estado_ticket
+    - fecha_venta
+  properties:
+    company_id:
+      type: integer
+      minimum: 1
+      example: 1
+    organizacion:
+      type: string
+      example: "Mi Empresa"
+    event_id:
+      type: integer
+      minimum: 1
+      example: 10
+    evento:
+      type: string
+      example: "Concierto X"
+    fecha_evento:
+      type: string
+      format: date
+      example: "2026-01-15"
+    ticket_id:
+      type: integer
+      minimum: 1
+      example: 501
+    precio_pagado:
+      type: string
+      description: Precio final pagado (string desde la vista/DB).
+      example: "450.00"
+    precio_original:
+      type: string
+      description: Precio original antes de descuento (string desde la vista/DB).
+      example: "500.00"
+    zona:
+      type: string
+      example: "VIP"
+    fila:
+      type: string
+      example: "A"
+    asiento:
+      type: string
+      example: "12"
+    estado_ticket:
+      type: string
+      example: "sold"
+    fecha_venta:
+      type: string
+      format: date-time
+      example: "2026-01-02T12:34:56.000Z"
+
+TicketSalesDetailEnvelope:
+  type: object
+  additionalProperties: false
+  required: [message, count, data]
+  properties:
+    message:
+      type: string
+      example: "Ticket sales detail fetched successfully."
+    count:
+      type: integer
+      minimum: 0
+      example: 1
+    data:
+      type: array
+      items:
+        $ref: "#/TicketSalesDetailItem"

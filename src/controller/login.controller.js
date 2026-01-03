@@ -9,6 +9,9 @@ export async function loginController(req, res) {
     return res.status(200).json({ "token": jwt });
   }
   catch (error) {
+    if (process.env.DEBUG === "true") {
+      console.error(error);
+    }
     return res.status(error.code).json({ "msg": error.message })
   }
 };

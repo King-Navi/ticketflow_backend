@@ -1,4 +1,3 @@
-//TODO: i18n
 class BadRequest extends Error {
   constructor(message = "Client error, check request syntax") {
     super(message);
@@ -39,4 +38,4 @@ class Teapot extends Error {
   }
 }
 
-export { BadRequest, NotFound, Unauthorized,Conflict, Teapot };
+export { BadRequest, NotFound, Unauthorized, Conflict, Teapot };

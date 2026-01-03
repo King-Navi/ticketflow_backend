@@ -26,22 +26,22 @@ export async function handleStripeWebhook(req, res) {
         }
         return res.status(400).send(`Webhook Error`);
     }
-
-
-    //Cuiado con status != 200 ya que stripe reintentara el pago
     switch (event.type) {
+        /**
+         * example:
+         * metadata.attendee_id
+         * metadata.event_id
+         * metadata.seat_ids -> "12,13,14"
+         * metadata.subtotal
+         * metadata.tax_amount
+         */
         case "payment_intent.succeeded": {
             const paymentIntent = event.data.object;
             const metadata = paymentIntent.metadata || {};
             if (process.env.DEBUG === "true") {
                 console.log(metadata);
             }
-            // example:
-            // metadata.attendee_id
-            // metadata.event_id
-            // metadata.seat_ids -> "12,13,14"
-            // metadata.subtotal
-            // metadata.tax_amount
+            
 
             try {
                 await finalizeTicketPurchaseFromStripe(paymentIntent);
@@ -57,8 +57,6 @@ export async function handleStripeWebhook(req, res) {
         }
 
         case "payment_intent.payment_failed": {
-            //liberar la reserva?
-            //¿EScribir que el pago fallo?
             return res.status(200).json({ received: true });
         }
         case "charge.refunded": {
@@ -79,12 +77,6 @@ export async function handleStripeWebhook(req, res) {
                 Detectar reembolsos hechos fuera de nuestra API (Dashboard),
                 pero para actuar de verdad es mejor usar charge.refund.updated, que trae el refund en sí.
             */
-            console.log("Stripe refund webhook received:", {
-                chargeId: charge.id,
-                paymentIntentId: charge.payment_intent,
-                amountRefunded: charge.amount_refunded,
-                refunds: charge.refunds,
-            });
             const charge = event.data.object;
             if (process.env.DEBUG === "true") {
                 console.log("Stripe refund webhook received:", {

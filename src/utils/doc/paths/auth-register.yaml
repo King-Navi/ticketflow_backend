@@ -10,7 +10,7 @@ put:
     content:
       application/json:
         schema:
-          $ref: "../schemas/authRegister.yaml#/RegisterRequest"
+          $ref: "../schemas/auth-register.scheme.yaml#/RegisterRequest"
         examples:
           attendee_example:
             value:
@@ -39,7 +39,7 @@ put:
       content:
         application/json:
           schema:
-            $ref: "../schemas/authRegister.yaml#/RegisterEnvelope"
+            $ref: "../schemas/auth-register.scheme.yaml#/RegisterEnvelope"
           examples:
             attendee_created:
               value:

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Código de verificación - TicketFlow</title>
+    <link rel="stylesheet" href="./VerificationCode.css">
+</head>
+<body>
+    <div class="email-container">
+        <header class="email-header">
+            <h1 class="logo">
+                TicketFlow
+            </h1>
+            <h2 class="header-subtitle">
+                Sistema de Reservación de Boletos
+            </h2>
+        </header>
+        <main class="email-body">
+            <h3 class="greeting">¡Hola!</h1>
+            <p class="message">
+                Recibimos una solicitud para verificar tu identidad para restablecer tu contraseña. Para continuar con el proceso, 
+                utiliza el siguiente código de verificación:
+            </p>
+            <section class="code-container">
+                <p class="code-label">Tu código de verificación</p>
+                <p class="code">{{code}}</p>
+            </section>
+            <section class="warning">
+                <p class="warning-text">
+                    <strong>Importante:</strong> Si no solicitaste este código, ignora este correo. 
+                    Nunca compartas este código con nadie. TicketFlow nunca te pedirá tu código por teléfono o email.
+                </p>
+            </section>
+            <div class="divider"></div>
+            <p class="message">
+                Si tienes alguna pregunta o necesitas ayuda, no dudes en contactarnos. Para aclaraciones contacta el siguientes correo:
+                <strong>ticketflow.msg@gmail.com</strong>
+            </p>
+        </main>
+        <footer class="footer">
+            <p class="footer-text">
+                Este es un correo automático, por favor no respondas a este mensaje.
+            </p>
+            <p class="footer-text">
+                © 2026 TicketFlow. Todos los derechos reservados.
+            </p>
+            <div class="social-links">
+                <a href="https://ticket-flow-three.vercel.app/" class="social-link">Página oficial</a>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>

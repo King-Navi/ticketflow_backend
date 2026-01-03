@@ -17,9 +17,6 @@ import {
 } from "../controller/auth.controller.js";
 
 const router = express.Router();
-
-//TODO: test
-
 const AUTH_ROUTE = "/v1/auth";
 
 

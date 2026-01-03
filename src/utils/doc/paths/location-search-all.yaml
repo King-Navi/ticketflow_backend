@@ -49,7 +49,7 @@ get:
               rows:
                 type: array
                 items:
-                  $ref: "../schemas/eventLocation.yaml#/EventLocation"
+                  $ref: "../schemas/event-location.scheme.yaml#/EventLocation"
           examples:
             ejemplo:
               value:

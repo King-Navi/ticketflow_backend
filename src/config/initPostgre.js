@@ -4,26 +4,64 @@ import { readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-dotenv.config();
-
+dotenv.config({ quiet: true });
 const RETRY_LIMIT = 10;
 const RETRY_INTERVAL_MS = 5000;
 
-const DB_NAME = process.env.DB_NAME;
-const DB_USER = process.env.DB_USER;
-const DB_PASSWORD = process.env.DB_PASSWORD;
-const DB_HOST = process.env.DB_HOST;
-const DB_PORT = process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : undefined;
-const DB_SSL = process.env.DB_SSL === 'true';
+const CONNECTION_STRING = process.env.DATABASE_URL_NEON || '';
 
-export const sequelizeCon = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
-  host: DB_HOST,
-  port: DB_PORT,
-  dialect: 'postgres',
-  dialectOptions: DB_SSL ? { ssl: { require: true, rejectUnauthorized: false } } : {},
-  define: { freezeTableName: true, underscored: false },
-  logging: false,
-});
+const DB_NAME = process.env.DB_NAME || '';
+const DB_USER = process.env.DB_USER || '';
+const DB_PASSWORD = process.env.DB_PASSWORD || '';
+const DB_HOST = process.env.DB_HOST || 'localhost';
+const DB_PORT = process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 5432;
+
+function inferSslEnabled(connectionString) {
+  const raw = process.env.DB_SSL;
+  if (raw === 'true') return true;
+  if (raw === 'false') return false;
+
+  if (!connectionString) return false;
+
+  try {
+    const u = new URL(connectionString);
+    const host = u.hostname;
+    // Treat common local hosts as non-SSL
+    if (host === 'localhost' || host === '127.0.0.1' || host === 'db') return false;
+    return true; // remote host => SSL
+  } catch {
+    // If parsing fails, safest assumption for a remote URL is SSL enabled
+    return true;
+  }
+}
+
+const SSL_ENABLED = inferSslEnabled(CONNECTION_STRING);
+
+const DIALECT_OPTIONS = SSL_ENABLED
+  ? { ssl: { require: true, rejectUnauthorized: false } }
+  : {};
+
+export const sequelizeCon = CONNECTION_STRING
+  ? new Sequelize(CONNECTION_STRING, {
+    dialect: 'postgres',
+    dialectOptions: DIALECT_OPTIONS,
+    define: { freezeTableName: true, underscored: false },
+    logging: false,
+  })
+  : new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
+    host: DB_HOST,
+    port: DB_PORT,
+    dialect: 'postgres',
+    dialectOptions: DIALECT_OPTIONS,
+    define: { freezeTableName: true, underscored: false },
+    logging: false,
+  });
+
+if (process.env.DEBUG === "true") {
+  console.log('[db] using connection string:', Boolean(CONNECTION_STRING));
+  console.log('[db] ssl enabled:', SSL_ENABLED);
+}
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -104,6 +142,9 @@ export async function initDatabase() {
       await sequelizeCon.authenticate();
       break;
     } catch (err) {
+      if (process.env.DEBUG === "true") {
+        console.error(err)
+      }
       lastErr = err;
       retries++;
       if (retries >= RETRY_LIMIT) throw lastErr;

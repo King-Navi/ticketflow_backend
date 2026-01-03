@@ -14,7 +14,7 @@ export async function loginService(username, password) {
   let credential = await credentialRepo.findCredentialByNickName(username);
 
   if (!credential) {
-    throw new NotFound("User not found");
+    throw new Unauthorized("Invalid credentials");
   }
   const isPasswordValid = await credentialRepo.isValidPassword(username, password);
   if (!isPasswordValid) {
@@ -30,11 +30,12 @@ export async function loginService(username, password) {
       userProfile = await organizerRepo.findOrganizerByCredentialId(credential.credential_id);
       break;
     case ROLE.ADMIN:
-      userProfile = { idAdmin: credential.credential_id, firstName: credential.nickname };
+      userProfile = { admin_id: credential.credential_id, firstName: credential.nickname };
       break;
     default:
       throw new Unauthorized("Unsupported role");
   }
+  
   if (!userProfile) throw new NotFound("User profile not found");
   const profileId =
     userProfile.attendee_id ??

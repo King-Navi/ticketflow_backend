@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-dotenv.config()
+dotenv.config({ quiet: true });
 import jwt from "jsonwebtoken";
 import { toRoleCode, ROLE_CODE } from "../model_db/utils/role.js";
 

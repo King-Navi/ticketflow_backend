@@ -1,6 +1,5 @@
 import dotenv from 'dotenv';
-dotenv.config();
-import https from 'https'
+dotenv.config({ quiet: true });
 import http from 'http'
 import express from 'express';
 import cors from 'cors';
@@ -14,6 +13,7 @@ import eventSeatRoute from './routes/eventSeat.route.js'
 import locationRoute from './routes/locations.route.js'
 import loginRoute from './routes/login.route.js'
 import organizerRoute from './routes/organizer.route.js'
+import reportRoute from './routes/report.route.js'
 import reserveRoute from './routes/reservation.route.js'
 import stripeWebhookRoute from './routes/stripeWebhook.route.js'
 import ticketRoute from './routes/ticket.route.js'
@@ -69,11 +69,10 @@ app.use(eventSeatRoute);
 app.use(locationRoute);
 app.use(loginRoute);
 app.use(organizerRoute);
+app.use(reportRoute);
 app.use(reserveRoute);
 app.use(ticketRoute);
 app.use(userRoute);
-
-// ... rutes
 
 app.use("/spec", express.static(specDir));
 app.get("/spec/openapi.yaml", (req, res) => res.sendFile(specFile));
@@ -91,7 +90,6 @@ app.use(errorHandler);
 async function start() {
   try {
     await initDatabase();
-    //TODO: https
     http.createServer(app).listen(httpPort, () => {
       console.log(`Server running on http://localhost:${httpPort}`);
     });

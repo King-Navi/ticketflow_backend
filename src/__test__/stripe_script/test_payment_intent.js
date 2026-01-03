@@ -1,8 +1,7 @@
 import dotenv from "dotenv";
 import Stripe from "stripe";
 
-dotenv.config();
-
+dotenv.config({ quiet: true });
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 if (!stripeSecretKey) {
   console.error("Missing STRIPE_SECRET_KEY env variable.");
