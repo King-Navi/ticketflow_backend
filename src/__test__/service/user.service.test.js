@@ -9,10 +9,17 @@ import CredentialRepository from "../../repositories/credential.repository.js";
 import AttendeeRepository from "../../repositories/attendee.repository.js";
 import OrganizerRepository from "../../repositories/organizer.repository.js";
 
+
+
 /**
  * Mock de módulos ESM con jest.unstable_mockModule
  *    (esto se ejecuta ANTES de importar el servicio que los usa)
  */
+jest.unstable_mockModule("../../messaging/loadEmailTemplate.js", () => ({
+  loadVerificationCodeTemplate: jest.fn(),
+}));
+
+
 
 jest.unstable_mockModule("../../utils/jwt.js", () => ({
   generateToken: jest.fn(),
@@ -60,6 +67,10 @@ const {
   recoverEmailService,
   sendRecoverCodeToEmailService,
 } = await import("../../service/user.service.js");
+
+const {
+  loadVerificationCodeTemplate
+} = await import("../../messaging/loadEmailTemplate.js");
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -185,28 +196,19 @@ describe("recoverEmailService", () => {
 // sendRecoverCodeToEmailService
 
 describe("sendRecoverCodeToEmailService", () => {
-  test("sendRecoverCodeToEmailService_ValidEmail_SendsEmailWithCode", async () => {
-    const email = "recover@example.com";
-
-    const isEmailTakenSpy = jest
-      .spyOn(CredentialRepository.prototype, "isEmailTaken")
-      .mockResolvedValue(true);
-
+  test("manda email con el html del template", async () => {
     codeManager.storeCode.mockReturnValue("CODE123");
-
-    //mockear sendEmail para que NO ejecute la implementación real
+    loadVerificationCodeTemplate.mockReturnValue("<p>HTML MOCK</p>");
     sendEmail.mockResolvedValue(true);
 
-    await sendRecoverCodeToEmailService(email);
+    await sendRecoverCodeToEmailService("recover@example.com");
 
-    expect(isEmailTakenSpy).toHaveBeenCalledWith(email);
-    expect(codeManager.storeCode).toHaveBeenCalledWith(email);
+    expect(loadVerificationCodeTemplate).toHaveBeenCalledWith("CODE123");
 
-    expect(sendEmail).toHaveBeenCalledTimes(1);
     expect(sendEmail).toHaveBeenCalledWith({
-      to: email,
+      to: "recover@example.com",
       subject: "Código de recuperación de cuenta",
-      text: expect.stringContaining("CODE123"),
+      html: "<p>HTML MOCK</p>",
     });
   });
 });

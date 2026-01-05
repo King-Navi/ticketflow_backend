@@ -210,8 +210,6 @@ export async function listAllLocationsService({ limit, offset } = {}) {
  * Recover full venue layout:
  * event_location -> sections -> seats
  *
- * Este service resuelve el problema 1
- * y respeta SRP en cada repositorio.
  *
  * @param {number|string} eventLocationId
  * @returns {Promise<object>}

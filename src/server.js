@@ -22,6 +22,7 @@ import { initDatabase } from './config/initPostgre.js';
 import { fileURLToPath } from "url";
 import path from "path";
 import swaggerUi from "swagger-ui-express";
+import { startReservationCleanupJob } from "./utils/expireReserveJob.js";
 
 
 function requireEnv(name) {
@@ -90,6 +91,8 @@ app.use(errorHandler);
 async function start() {
   try {
     await initDatabase();
+    startReservationCleanupJob();
+
     http.createServer(app).listen(httpPort, () => {
       console.log(`Server running on http://localhost:${httpPort}`);
     });
