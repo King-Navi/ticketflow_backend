@@ -88,7 +88,6 @@ export async function buyTicketService(
     let total_amount = 0;
     let ticket_quantity = 0;
     let categoryLabel;
-    let seatLabelPayload;
     const tx = await sequelizeCon.transaction();
     try {
         const eventSeatRepo = new EventSeatRepository();
@@ -185,15 +184,6 @@ export async function buyTicketService(
         ticket_quantity = seats.length;
 
         categoryLabel = event.category ?? " ";
-        seatLabelPayload = seats.map((s) => ({
-            event_seat_id: s.event_seat_id,
-            row_no: s.row_no ?? null,
-            seat_no: s.seat_no ?? null,
-            seat_label:
-                s.row_no && s.seat_no
-                    ? `Row ${s.row_no} Seat ${s.seat_no}`
-                    : `Seat ${s.event_seat_id}`,
-        }));
 
         await tx.commit();
     } catch (err) {
@@ -216,7 +206,6 @@ export async function buyTicketService(
             subtotal: subtotal.toFixed(2),
             tax_amount: tax_amount.toFixed(2),
             category_label: categoryLabel,
-            seat_labels: JSON.stringify(seatLabelPayload),
             idempotency_key: idempotencyKey,
         },
         automatic_payment_methods: {
@@ -277,23 +266,6 @@ export async function finalizeTicketPurchaseFromStripe(paymentIntent) {
         throw new Error("Missing or invalid metadata in PaymentIntent.");
     }
     const defaultCategoryLabel = metadata.category_label || " ";
-    let seatLabelsById = {};
-    if (metadata.seat_labels) {
-        try {
-            const parsed = JSON.parse(metadata.seat_labels);
-            for (const item of parsed) {
-                const id = Number(item.event_seat_id);
-                if (!Number.isNaN(id)) {
-                    seatLabelsById[id] = item;
-                }
-            }
-        } catch (e) {
-            if (process.env.DEBUG === "true") {
-                console.error("Failed to parse seat_labels metadata:", e);
-            }
-        }
-    }
-
     const tx = await sequelizeCon.transaction();
     try {
         const paymentRepo = new PaymentRepository();
@@ -351,12 +323,13 @@ export async function finalizeTicketPurchaseFromStripe(paymentIntent) {
             const seat = await eventSeatRepo.findById(seatId, { transaction: tx });
             const unitPrice = Number(seat.base_price);
 
-            const seatMeta = seatLabelsById[seatId] || null;
             const categoryLabel = defaultCategoryLabel;
-            const seatLabel = seatMeta?.seat_label ??
-                (seatMeta?.row_no && seatMeta?.seat_no
-                    ? `Row ${seatMeta.row_no} Seat ${seatMeta.seat_no}`
-                    : `Seat ${seatId}`);
+            const seatLabel =
+                (seat?.row_no && seat?.seat_no)
+                    ? `Row ${seat.row_no} Seat ${seat.seat_no}`
+                    : (seat?.seat_label
+                        ? String(seat.seat_label)
+                        : `Seat ${seatId}`);
             await ticketRepo.createTicketFromSeat(
                 {
                     payment_id: paymentId,
