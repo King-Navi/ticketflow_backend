@@ -37,13 +37,10 @@ router.get(
 );
 
 
-// TODO: doc
 router.post(
   `${TICKET_ROUTE}/:ticketId/refund`,
   authRequired(),
   requireRole(ROLE.ATTENDEE),
-  // TODO: esquema con razón, etc:
-  // validateBody(refundTicketSchema),
   refundTicketController
 );
 

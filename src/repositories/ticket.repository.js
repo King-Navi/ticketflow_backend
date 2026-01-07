@@ -271,7 +271,7 @@ export default class TicketRepository {
         `
         SELECT
           t.ticket_id,
-          t.category_label,
+          COALESCE(s.section_name, t.category_label) AS category_label,
           t.seat_label,
           t.unit_price,
           t.checked_in_at,
@@ -283,6 +283,12 @@ export default class TicketRepository {
         FROM ticket AS t
         JOIN payment AS p
           ON p.payment_id = t.payment_id
+        JOIN event_seat AS es
+          ON es.event_seat_id = t.event_seat_id
+        JOIN seat AS st
+          ON st.seat_id = es.seat_id
+        JOIN section AS s
+          ON s.section_id = st.section_id
         WHERE t.ticket_id = :ticketId
           AND p.attendee_id = :attendeeId;
         `,
